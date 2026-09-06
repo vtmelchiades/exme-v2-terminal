@@ -722,7 +722,7 @@ const POSTS=[];
       const scene=pick(r,P.scenes);
       const promptBase=`${scene}, ${CAMS[arch]}, ${GRADE}`;
       const isCarousel = (n % 8 === 0);
-      POSTS.push(Object.assign({carousel: isCarousel, slides: isCarousel ? 5 : 1},
+      POSTS.push(Object.assign({carousel: isCarousel, slides: isCarousel ? 5 : 1}, {
         n,serial,pillar:P,arch,title:seed[0],hook:seed[1],theme:seed[2],img,custom:null,
         ano,stamp:pick(r,STAMPS),estado:pick(r,ESTADOS),user:pick(r,USERS),
         prov:pick(r,PROVS),arq:pick(r,ARQS),legFoto:pick(r,LEGFOTO),nota:pick(r,NOTAS),
@@ -733,7 +733,7 @@ const POSTS=[];
         body,cta,tags,
         legenda:`EXME® — CASA DO COLECIONADOR MODERNO\nFORMATO: FEED 1080×1350 · STORY 1080×1920\n────────────────────────────────\n\n${seed[1]}\n\n${body}\n\n${cta}\n\n${tags}\n\n────────────────────────────────\nexme.club · tu és colecionador`,
         prompt:k=>`PROMPT DE IMAGEM — MIDJOURNEY v6 / FLUX.1\n────────────────────────────────\n[${k}]\n${promptBase} --ar ${k==='FEED 4:5'?'4:5':'9:16'}\n\nnotas de direção: ${DIRNOTES[arch]}\n────────────────────────────────\nsubstituir o sujeito por fotografia própria da comunidade ExMe quando aplicável`
-      });
+      }));
     });
   });
 })();
