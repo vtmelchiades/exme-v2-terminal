@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EXME® — Estúdio do Colecionador · Arquivo de 90 Peças</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%230D0F12'/%3E%3Crect x='10' y='10' width='44' height='44' fill='%2310E868'/%3E%3Ctext x='32' y='42' font-family='Arial Black' font-size='26' text-anchor='middle' fill='%230D0F12'%3EEX%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Archivo:ital,wght@0,400;0,500;0,600;0,800;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+:root{
+  --ink:#0D0F12; --slate:#161A22; --panel:#12161E;
+  --grass:#10E868; --gold:#F59E0B; --silver:#E2E8F0; --paper:#F8FAFC;
+  --line:rgba(226,232,240,.16); --dim:rgba(248,250,252,.55);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--paper);font-family:'Archivo',sans-serif;overflow-x:hidden;min-height:100vh}
+::selection{background:var(--grass);color:var(--ink)}
+button{font-family:'Space Mono',monospace}
+.mono{font-family:'Space Mono',monospace}
+.disp{font-family:'Unbounded',sans-serif}
+
+/* ===== fundo vivo ===== */
+#bg3d{position:fixed;inset:0;z-index:0;pointer-events:none}
+.gridlines{position:fixed;inset:-80px;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(248,250,252,.045) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(248,250,252,.045) 1px,transparent 1px),
+    linear-gradient(rgba(248,250,252,.085) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(248,250,252,.085) 1px,transparent 1px);
+  background-size:28px 28px,28px 28px,140px 140px,140px 140px;
+  transition:transform .8s cubic-bezier(.2,.8,.2,1)}
+
+/* ===== masthead ===== */
+.mast{position:relative;z-index:4;display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;
+  padding:30px 36px 20px;background:linear-gradient(180deg,rgba(13,15,18,.96) 60%,rgba(13,15,18,.7));border-bottom:1px solid var(--line)}
+.logo{font-family:'Unbounded';font-weight:900;font-size:clamp(32px,4.2vw,54px);line-height:.86;display:flex;align-items:baseline;gap:14px;letter-spacing:.01em}
+.logo .sq{width:.5em;height:.5em;background:var(--grass);display:inline-block;transform:translateY(-.05em);transition:transform .4s cubic-bezier(.3,1.6,.4,1)}
+.logo:hover .sq{transform:translateY(-.05em) rotate(90deg) scale(1.15)}
+.logo .reg{font-size:.32em;color:var(--gold)}
+.logo-sub{font-size:11px;letter-spacing:.34em;color:var(--dim);margin-top:10px}
+.mast-r{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.seg{display:flex;border:1px solid rgba(226,232,240,.35)}
+.seg button{font-size:11px;letter-spacing:.12em;padding:11px 15px;background:transparent;color:var(--dim);border:0;cursor:pointer;transition:all .2s}
+.seg button.on{background:var(--paper);color:var(--ink);font-weight:700}
+.btn{font-size:11px;letter-spacing:.13em;padding:11px 15px;border:1px solid;background:transparent;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all .2s}
+.btn:active{transform:scale(.95)}
+.btn svg{width:14px;height:14px}
+.btn-grass{border-color:var(--grass);color:var(--grass)}
+.btn-grass:hover{background:var(--grass);color:var(--ink);box-shadow:0 0 26px rgba(16,232,104,.35)}
+.btn-gold{border-color:var(--gold);color:var(--gold)}
+.btn-gold:hover{background:var(--gold);color:var(--ink);box-shadow:0 0 26px rgba(245,158,11,.35)}
+.btn-paper{border-color:rgba(226,232,240,.5);color:var(--paper)}
+.btn-paper:hover{background:var(--paper);color:var(--ink)}
+.dd{position:relative}
+.dd-menu{position:absolute;right:0;top:calc(100% + 10px);background:var(--slate);border:1px solid rgba(226,232,240,.3);min-width:320px;z-index:60;display:none;box-shadow:0 30px 70px rgba(0,0,0,.6)}
+.dd.open .dd-menu{display:block;animation:dropIn .22s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes dropIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.dd-menu button{display:flex;justify-content:space-between;gap:14px;width:100%;padding:13px 16px;font-size:11px;letter-spacing:.08em;color:var(--paper);background:none;border:0;border-bottom:1px dashed rgba(226,232,240,.15);cursor:pointer;transition:all .15s}
+.dd-menu button:hover{background:rgba(16,232,104,.1);color:var(--grass);padding-left:22px}
+.dd-menu button b{color:var(--gold)}
+
+/* ===== ticker + rasgão ===== */
+.ticker{position:relative;z-index:3;background:var(--grass);color:var(--ink);overflow:hidden;padding:9px 0;font-family:'Space Mono';font-weight:700;font-size:13px;letter-spacing:.18em}
+.ticker-in{display:flex;white-space:nowrap;width:max-content;animation:tick 46s linear infinite}
+@keyframes tick{to{transform:translateX(-50%)}}
+.tear{position:relative;z-index:3;height:13px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='13'%3E%3Cpath d='M0 0h26v3l-6.5 10L13 3 6.5 13 0 3z' fill='%2310E868'/%3E%3C/svg%3E") repeat-x;background-size:26px 13px}
+
+/* ===== toolbar / gavetas ===== */
+.toolbar{position:relative;z-index:2;display:grid;grid-template-columns:1fr 340px;gap:28px;padding:28px 36px 8px;align-items:start}
+.drawer-head{font-size:11px;letter-spacing:.3em;color:var(--dim);margin:16px 0 10px;display:flex;justify-content:space-between;align-items:center}
+.drawer-head:first-child{margin-top:0}
+.link{background:none;border:0;color:var(--gold);font-size:10px;letter-spacing:.2em;cursor:pointer;text-decoration:underline dotted}
+.link:hover{color:var(--grass)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{--c:var(--paper);font-size:11px;letter-spacing:.08em;padding:9px 12px;border:1px solid rgba(226,232,240,.25);color:rgba(248,250,252,.78);background:rgba(22,26,34,.65);cursor:pointer;display:inline-flex;gap:9px;align-items:center;transition:all .18s}
+.chip i{width:9px;height:9px;background:var(--c);display:inline-block;flex:none}
+.chip .cnt{opacity:.55}
+.chip:hover{border-color:var(--c);transform:translateY(-2px)}
+.chip.on{background:var(--c);color:var(--ink);border-color:var(--c);font-weight:700}
+.chip.on i{background:var(--ink)}
+.chip.holo-chip{--c:var(--paper);background-image:linear-gradient(115deg,rgba(16,232,104,.14),rgba(245,158,11,.14) 50%,rgba(226,232,240,.14))}
+.ledger{border:1px solid var(--line);background:rgba(22,26,34,.72);padding:20px}
+.ledger .stat{font-size:11px;letter-spacing:.2em;color:var(--dim)}
+.ledger .stat b{font-family:'Unbounded';font-weight:900;font-size:38px;color:var(--grass);display:block;margin:6px 0 2px;letter-spacing:0}
+.matrix{margin-top:18px;border-top:1px dashed rgba(226,232,240,.2);padding-top:12px}
+.matrix summary{font-family:'Space Mono';font-size:11px;letter-spacing:.22em;color:var(--gold);cursor:pointer;list-style:none}
+.matrix summary:hover{color:var(--grass)}
+.matrix table{width:100%;font-family:'Space Mono';font-size:10.5px;border-collapse:collapse;margin-top:12px;color:rgba(248,250,252,.8)}
+.matrix th{text-align:left;color:var(--dim);font-weight:400;letter-spacing:.1em;padding:4px 4px 8px}
+.matrix td{padding:6px 4px;border-bottom:1px dashed rgba(226,232,240,.13)}
+.matrix td b{color:var(--grass);font-weight:700}
+.notes{margin-top:18px;font-family:'Space Mono';font-size:10.5px;line-height:2;color:var(--dim);list-style:none}
+.notes li::before{content:'▸ ';color:var(--gold)}
+
+/* ===== mural de peças ===== */
+.grid{position:relative;z-index:2;display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:24px;padding:22px 36px 70px}
+.grid.story{grid-template-columns:repeat(auto-fill,minmax(265px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);position:relative;cursor:pointer;content-visibility:auto;contain-intrinsic-size:560px;opacity:0;transition:border-color .25s,box-shadow .3s}
+.card.in{opacity:1;animation:rise .7s cubic-bezier(.2,.7,.2,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
+.card:hover{border-color:rgba(16,232,104,.55);box-shadow:0 24px 60px rgba(0,0,0,.5),0 0 0 1px rgba(16,232,104,.25)}
+.pvwrap{position:relative;overflow:hidden;background:var(--ink);aspect-ratio:1080/1350}
+.grid.story .pvwrap{aspect-ratio:9/16}
+.pvscale{position:absolute;top:0;left:0;width:1080px;transform-origin:top left;will-change:transform}
+.holo{position:absolute;inset:0;pointer-events:none;z-index:5;opacity:0;transition:opacity .3s;
+  background:radial-gradient(620px circle at var(--mx,50%) var(--my,50%),rgba(248,250,252,.16),rgba(16,232,104,.07) 32%,transparent 62%)}
+.card:hover .holo{opacity:1}
+.drop-hint{position:absolute;inset:14px;border:3px dashed var(--grass);color:var(--grass);display:grid;place-items:center;font-family:'Space Mono';font-size:12px;letter-spacing:.3em;background:rgba(13,15,18,.85);opacity:0;pointer-events:none;transition:opacity .2s;z-index:6}
+.card.dropping .drop-hint{opacity:1}
+.cmeta{padding:12px 14px 14px;border-top:1px solid var(--line)}
+.crow1{display:flex;align-items:center;gap:9px;margin-bottom:10px;flex-wrap:wrap}
+.ser{font-size:11px;letter-spacing:.14em;color:var(--dim)}
+.pill{--acc:var(--paper);font-size:9.5px;letter-spacing:.14em;padding:3px 8px;border:1px solid var(--acc);color:var(--acc)}
+.arch{font-size:9.5px;color:rgba(248,250,252,.42);letter-spacing:.1em;margin-left:auto}
+.crow2{display:flex;gap:6px}
+.crow2 button{flex:1;font-size:9.5px;letter-spacing:.08em;padding:8px 2px;background:transparent;border:1px solid rgba(226,232,240,.25);color:rgba(248,250,252,.8);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:all .16s}
+.crow2 button svg{width:12px;height:12px}
+.crow2 button:hover{border-color:var(--grass);color:var(--grass);background:rgba(16,232,104,.08)}
+.crow2 button:active{transform:scale(.93)}
+
+/* ===== modal ===== */
+.modal{position:fixed;inset:0;background:rgba(13,15,18,.92);z-index:70;display:grid;place-items:center;padding:26px;opacity:0;pointer-events:none;transition:opacity .25s}
+.modal.open{opacity:1;pointer-events:auto}
+.m-shell{display:grid;grid-template-columns:auto 420px;gap:28px;align-items:center;max-width:1240px;width:100%}
+.m-prev{position:relative}
+.m-tear.tearing{animation:tearIn .8s cubic-bezier(.25,.9,.3,1) both}
+@keyframes tearIn{0%{clip-path:inset(0 0 100% 0);transform:rotate(1.6deg)}55%{clip-path:inset(0 0 0 0)}100%{clip-path:inset(0 0 0 0);transform:none}}
+.m-panel{background:var(--slate);border:1px solid rgba(226,232,240,.25);padding:22px;max-height:88vh;overflow:auto}
+.m-head{display:flex;justify-content:space-between;align-items:center;font-size:11px;letter-spacing:.22em;color:var(--dim);margin-bottom:14px}
+.m-head .x{background:none;border:1px solid rgba(226,232,240,.3);color:var(--paper);width:34px;height:34px;display:grid;place-items:center;cursor:pointer;transition:all .2s}
+.m-head .x:hover{border-color:var(--gold);color:var(--gold);transform:rotate(90deg)}
+.m-title{font-family:'Unbounded';font-weight:900;font-size:24px;line-height:1.05;text-transform:uppercase;margin-bottom:8px}
+.m-tags{font-size:10px;letter-spacing:.14em;color:var(--gold);margin-bottom:16px}
+.tabs{display:flex;gap:8px;margin-bottom:10px}
+.tabs button{font-size:10px;letter-spacing:.14em;padding:8px 12px;background:none;border:1px solid rgba(226,232,240,.25);color:var(--dim);cursor:pointer;transition:all .15s}
+.tabs button.on{border-color:var(--grass);color:var(--grass);background:rgba(16,232,104,.08)}
+pre{font-family:'Space Mono';font-size:11.5px;line-height:1.75;white-space:pre-wrap;color:rgba(248,250,252,.88);border:1px dashed rgba(226,232,240,.28);padding:14px;background:var(--ink);max-height:230px;overflow:auto}
+.m-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+.m-nav{display:flex;justify-content:space-between;align-items:center;margin-top:18px;font-size:10.5px;letter-spacing:.16em;color:var(--dim)}
+.m-nav button{background:none;border:0;color:var(--grass);font-size:10.5px;letter-spacing:.16em;cursor:pointer}
+.m-nav button:hover{color:var(--gold);text-decoration:underline}
+
+/* ===== toast ===== */
+.toast{position:fixed;right:24px;bottom:24px;z-index:90;background:var(--slate);border:1px solid var(--grass);padding:15px 17px;display:none;align-items:center;gap:14px;min-width:320px;box-shadow:0 24px 60px rgba(0,0,0,.6)}
+.toast.on{display:flex;animation:dropIn .25s}
+.t-bar{flex:1;height:6px;background:rgba(226,232,240,.14)}
+.t-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--grass),var(--gold));transition:width .18s}
+#tLabel{font-size:10.5px;letter-spacing:.12em;color:var(--paper);min-width:130px}
+
+/* ===== rodapé ===== */
+.foot{position:relative;z-index:2;border-top:1px solid var(--line);padding:26px 36px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-family:'Space Mono';font-size:10.5px;letter-spacing:.14em;color:var(--dim)}
+.foot b{color:var(--grass)}
+
+/* ╔════════════════════════════════════════════╗
+   ║  MOTOR GRÁFICO — PALCO 1080 × 1350 / 1920   ║
+   ╚════════════════════════════════════════════╝ */
+.stage{position:relative;width:1080px;height:1350px;overflow:hidden;background:var(--ink);color:var(--paper);font-family:'Archivo',sans-serif;--acc:#F59E0B}
+.stage.story{height:1920px}
+.stage .bg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(248,250,252,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(248,250,252,.045) 1px,transparent 1px);background-size:36px 36px}
+.stage .grain{position:absolute;inset:0;z-index:40;pointer-events:none;opacity:.09;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.7'/%3E%3C/svg%3E")}
+.ch-t,.ch-b{position:absolute;left:0;right:0;display:flex;align-items:center;gap:20px;padding:0 66px;z-index:30;font-family:'Space Mono'}
+.ch-t{top:44px}
+.ch-b{bottom:44px}
+.ch-serial{font-size:26px;letter-spacing:.2em;color:var(--acc);font-weight:700}
+.ch-mid{flex:1;text-align:center;font-size:19px;letter-spacing:.3em;color:rgba(248,250,252,.5)}
+.bc{width:160px;height:34px;background:repeating-linear-gradient(90deg,#F8FAFC 0 2px,transparent 2px 5px,#F8FAFC 5px 6px,transparent 6px 9px,#F8FAFC 9px 12px,transparent 12px 15px)}
+.ch-pill{font-size:19px;letter-spacing:.2em;color:var(--acc)}
+.ch-arch{flex:1;text-align:center;font-size:17px;letter-spacing:.24em;color:rgba(248,250,252,.45)}
+.ch-site{font-size:19px;letter-spacing:.2em;color:rgba(248,250,252,.75);border:2px solid rgba(248,250,252,.4);padding:6px 12px}
+.crops i{position:absolute;width:26px;height:26px;border:3px solid rgba(248,250,252,.5);z-index:31}
+.crops .c1{top:96px;left:60px;border-right:0;border-bottom:0}
+.crops .c2{top:96px;right:60px;border-left:0;border-bottom:0}
+.crops .c3{bottom:96px;left:60px;border-right:0;border-top:0}
+.crops .c4{bottom:96px;right:60px;border-left:0;border-top:0}
+.stampel{position:absolute;z-index:32;font-family:'Space Mono';font-weight:700;border:4px dashed currentColor;padding:12px 22px;letter-spacing:.28em;transform:rotate(-8deg);opacity:.9;text-transform:uppercase}
+
+/* — A1 · The Vault / Foil — */
+.a1{position:absolute;inset:112px 70px;z-index:2;display:flex;flex-direction:column;align-items:center;gap:26px;text-align:center}
+.a1-kicker{font-size:22px;letter-spacing:.34em;color:var(--acc)}
+.a1-card{position:relative;width:700px;height:620px}
+.story .a1-card{width:780px;height:960px}
+.a1-frame{position:absolute;inset:0;border:7px solid var(--silver);border-radius:36px;overflow:hidden;background:var(--slate);box-shadow:0 46px 100px rgba(0,0,0,.6),inset 0 0 0 3px rgba(13,15,18,.9)}
+.a1-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.a1-foil{position:absolute;inset:0;mix-blend-mode:overlay;background:linear-gradient(115deg,rgba(16,232,104,.6),rgba(245,158,11,.65) 26%,rgba(226,232,240,.5) 50%,rgba(245,158,11,.65) 74%,rgba(16,232,104,.6));background-size:300% 300%;animation:foil 7s linear infinite}
+@keyframes foil{0%{background-position:0% 0%}100%{background-position:300% 300%}}
+.a1-sheen{position:absolute;inset:-60%;background:linear-gradient(105deg,transparent 43%,rgba(248,250,252,.55) 50%,transparent 57%);animation:sheen 5.5s ease-in-out infinite;pointer-events:none}
+@keyframes sheen{0%,18%{transform:translateX(-46%)}62%,100%{transform:translateX(46%)}}
+.a1-namebar{position:absolute;left:0;right:0;bottom:0;padding:17px 24px;background:rgba(13,15,18,.85);border-top:2px solid rgba(248,250,252,.3);color:var(--acc);font-family:'Space Mono';font-size:22px;letter-spacing:.16em;z-index:3}
+.a1 .stampel{right:-34px;top:34px;font-size:30px;color:var(--acc);background:rgba(13,15,18,.6)}
+.a1-title{font-family:'Unbounded';font-weight:900;font-size:70px;line-height:.98;text-transform:uppercase;max-width:920px}
+.a1-hook{font-size:25px;line-height:1.5;color:rgba(248,250,252,.78);max-width:840px}
+.a1-stats{display:flex;gap:30px;font-family:'Space Mono';font-size:20px;color:rgba(248,250,252,.55);letter-spacing:.1em;margin-top:auto}
+.story .a1-title{font-size:82px}
+.story .a1-hook{font-size:29px}
+
+/* — A2 · Collector's Archive / Scrapbook — */
+.a2{position:absolute;inset:112px 70px;z-index:2}
+.a2-paper{position:absolute;inset:0;background:repeating-linear-gradient(transparent 0 46px,rgba(248,250,252,.045) 46px 48px),#171C25;border:2px solid rgba(248,250,252,.16);box-shadow:inset 0 0 90px rgba(0,0,0,.55)}
+.a2-head{position:absolute;top:34px;left:44px;font-family:'Space Mono';font-size:20px;letter-spacing:.24em;color:rgba(248,250,252,.55)}
+.a2-photo{position:absolute;left:56px;top:130px;width:540px;transform:rotate(-4deg);background:var(--paper);padding:16px 16px 56px;box-shadow:0 30px 60px rgba(0,0,0,.5)}
+.a2-photo img{display:block;width:100%;height:380px;object-fit:cover;filter:saturate(.85) contrast(1.06)}
+.a2-cap{position:absolute;left:20px;bottom:12px;font-family:'Space Mono';font-size:19px;color:#333;letter-spacing:.06em}
+.story .a2-photo{top:170px;width:620px}
+.story .a2-photo img{height:470px}
+.tape{position:absolute;width:150px;height:42px;background:rgba(226,232,240,.8);box-shadow:0 4px 10px rgba(0,0,0,.25);opacity:.92;
+  clip-path:polygon(0 18%,5% 0,11% 14%,18% 2%,26% 16%,34% 0,42% 12%,50% 2%,58% 16%,66% 0,74% 12%,82% 2%,90% 16%,96% 4%,100% 18%,100% 82%,95% 100%,88% 86%,80% 100%,72% 88%,64% 100%,56% 86%,48% 100%,40% 88%,32% 100%,24% 86%,16% 100%,9% 88%,4% 100%,0 84%)}
+.tp1{top:-18px;left:-40px;transform:rotate(-38deg)}
+.tp2{top:-16px;right:-42px;transform:rotate(34deg)}
+.a2-note{position:absolute;right:52px;top:150px;width:360px;background:var(--acc);color:var(--ink);padding:26px 26px;font-family:'Space Mono';font-size:24px;line-height:1.45;transform:rotate(2.4deg);box-shadow:10px 14px 0 rgba(0,0,0,.35);font-weight:700}
+.story .a2-note{top:760px;width:420px;font-size:27px}
+.a2-title{position:absolute;left:56px;bottom:230px;font-family:'Unbounded';font-weight:900;font-size:78px;line-height:.96;text-transform:uppercase;transform:rotate(-1.6deg);max-width:640px}
+.story .a2-title{bottom:330px;font-size:88px}
+.a2-circ{position:absolute;right:70px;bottom:230px;width:216px;height:216px;border:4px dashed var(--acc);border-radius:50%;display:grid;place-items:center;text-align:center;transform:rotate(9deg);color:var(--acc);font-family:'Space Mono';font-size:25px;letter-spacing:.24em;line-height:1.5;font-weight:700}
+.story .a2-circ{bottom:340px;width:250px;height:250px}
+.a2-foot{position:absolute;left:56px;bottom:56px;font-family:'Space Mono';font-size:19px;letter-spacing:.08em;color:rgba(248,250,252,.55);max-width:760px}
+.a2-dots i{position:absolute;border-radius:50%}
+.a2-dots .d1{width:34px;height:34px;background:var(--grass);right:330px;top:110px}
+.a2-dots .d2{width:22px;height:22px;background:var(--gold);right:300px;top:150px}
+.a2-dots .d3{width:16px;height:16px;background:var(--silver);right:352px;top:166px}
+
+/* — A3 · Digital Nostalgia / 2000s Web — */
+.a3{position:absolute;inset:104px 70px;z-index:2;display:flex;flex-direction:column;gap:30px}
+.a3-win{border:3px solid var(--silver);background:#10141B;box-shadow:14px 14px 0 rgba(16,232,104,.22)}
+.a3-bar{display:flex;align-items:center;gap:14px;background:linear-gradient(90deg,#10E868,#0a9c46);color:var(--ink);padding:13px 18px}
+.a3-dots{display:flex;gap:7px}
+.a3-dots i{width:16px;height:16px;background:var(--ink);opacity:.85}
+.a3-file{flex:1;font-family:'Space Mono';font-weight:700;font-size:22px;letter-spacing:.04em}
+.a3-x{font-family:'Space Mono';font-weight:700;font-size:22px}
+.a3-menu{background:var(--slate);border-bottom:2px solid rgba(226,232,240,.25);padding:11px 20px;font-family:'Space Mono';font-size:20px;color:rgba(248,250,252,.75);letter-spacing:.1em}
+.a3-body{padding:32px 38px;display:flex;flex-direction:column;gap:24px}
+.a3-path{font-family:'Space Mono';color:var(--grass);font-size:22px;letter-spacing:.04em}
+.a3-post{border-left:7px solid var(--grass);padding-left:24px}
+.a3-user{font-family:'Space Mono';color:var(--gold);font-size:23px}
+.a3-quote{font-weight:600;font-size:34px;line-height:1.32;margin:12px 0 12px}
+.a3-meta{font-family:'Space Mono';color:rgba(248,250,252,.55);font-size:20px}
+.a3-imgrow{display:flex;gap:24px;align-items:center}
+.a3-thumb{width:330px;height:240px;object-fit:cover;border:3px solid rgba(248,250,252,.4);filter:contrast(1.12) saturate(.85)}
+.a3-sidemeta{font-family:'Space Mono';font-size:20px;color:rgba(248,250,252,.6);line-height:1.8}
+.a3-marq{overflow:hidden;border:2px dashed rgba(16,232,104,.6);color:var(--grass);padding:11px 0;font-family:'Space Mono';font-size:22px;letter-spacing:.12em;white-space:nowrap}
+.a3-track{display:inline-flex;width:max-content;animation:tick 16s linear infinite}
+.a3-track span{padding-right:30px}
+.a3-title{font-family:'Unbounded';font-weight:900;font-size:72px;line-height:.98;text-transform:uppercase}
+.a3-status{font-family:'Space Mono';font-size:22px;color:rgba(248,250,252,.6);letter-spacing:.12em;margin-top:auto}
+.cursor{color:var(--grass);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.story .a3-quote{font-size:40px}
+.story .a3-thumb{width:400px;height:300px}
+.story .a3-title{font-size:84px}
+
+/* — A4 · Brutal Quote / Manifesto — */
+.a4-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:grayscale(.55) contrast(1.16) brightness(.78)}
+.a4-veil{position:absolute;inset:0;background:linear-gradient(200deg,rgba(13,15,18,.9) 28%,rgba(13,15,18,.5) 55%,rgba(13,15,18,.93)),radial-gradient(65% 55% at 72% 78%,rgba(16,232,104,.16),transparent)}
+.a4-q{position:absolute;left:70px;right:150px;top:210px;z-index:2;font-family:'Unbounded';font-weight:900;font-size:90px;line-height:.97;text-transform:uppercase;text-shadow:0 8px 0 rgba(13,15,18,.65)}
+.a4-q .acc{color:var(--acc)}
+.story .a4-q{top:300px;font-size:102px}
+.a4-attr{position:absolute;left:70px;bottom:140px;z-index:2;font-family:'Space Mono';font-size:24px;letter-spacing:.2em;color:rgba(248,250,252,.85)}
+.a4-attr::before{content:'— ';color:var(--acc)}
+.a4-side{position:absolute;right:46px;top:50%;transform:translateY(-50%);writing-mode:vertical-rl;z-index:2;font-family:'Space Mono';font-size:22px;letter-spacing:.5em;color:rgba(248,250,252,.5)}
+.a4-mark{position:absolute;left:70px;top:130px;z-index:2;font-family:'Unbounded';font-weight:900;font-size:64px;color:var(--acc)}
+
+/* — A5 · Split Evidence / Relíquia — */
+.a5-top{position:absolute;top:0;left:0;right:0;height:600px;overflow:hidden}
+.story .a5-top{height:860px}
+.a5-img{width:100%;height:100%;object-fit:cover;filter:sepia(.34) contrast(1.08) saturate(.82)}
+.a5-wear{position:absolute;inset:0;background:radial-gradient(85% 95% at 50% 42%,transparent 52%,rgba(13,15,18,.6)),linear-gradient(rgba(245,158,11,.13),transparent 42%)}
+.a5-tear{position:absolute;left:0;right:0;bottom:-1px;height:26px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='26'%3E%3Cpath d='M0 26h36V14l-9 12-9-16-9 16-9-12z' fill='%230D0F12'/%3E%3C/svg%3E") repeat-x;background-size:36px 26px}
+.a5-plate{position:absolute;top:28px;left:34px;background:rgba(13,15,18,.82);border:1px solid rgba(248,250,252,.45);padding:9px 16px;font-family:'Space Mono';font-size:20px;letter-spacing:.18em}
+.a5-bot{position:absolute;left:70px;right:70px;top:664px;bottom:104px;display:flex;flex-direction:column;gap:24px}
+.story .a5-bot{top:930px}
+.a5-cat{font-family:'Space Mono';color:var(--acc);letter-spacing:.24em;font-size:24px}
+.a5-title{font-family:'Unbounded';font-weight:900;font-size:80px;line-height:.96;text-transform:uppercase}
+.a5-desc{font-size:27px;line-height:1.45;color:rgba(248,250,252,.86);max-width:880px}
+.a5-rows{display:grid;grid-template-columns:1fr 1fr;gap:0 44px;margin-top:auto;border-top:3px solid rgba(248,250,252,.22);font-family:'Space Mono';font-size:21px;color:rgba(248,250,252,.55)}
+.a5-rows div{display:flex;justify-content:space-between;gap:14px;padding:13px 0;border-bottom:1px solid rgba(248,250,252,.13)}
+.a5-rows b{color:var(--paper);font-weight:700;text-align:right}
+.a5 .stampel{right:70px;top:700px;font-size:26px;color:var(--acc)}
+.story .a5 .stampel{top:980px}
+.story .a5-title{font-size:90px}
+
+/* — A6 · Carrossel Ritualístico — */
+.a6{position:absolute;inset:112px 60px;z-index:2;display:flex;flex-direction:column}
+.a6-lanes{flex:1;display:flex;gap:18px}
+.lane{position:relative;flex:1;border:2px solid rgba(248,250,252,.18);background:var(--panel);overflow:hidden;display:flex;flex-direction:column}
+.lane img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.92}
+.lane .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(13,15,18,.55),transparent 30%,transparent 62%,rgba(13,15,18,.85))}
+.lane-n{position:relative;z-index:2;font-family:'Space Mono';font-size:26px;letter-spacing:.34em;color:var(--acc);padding:24px 26px;font-weight:700}
+.lane-t{position:relative;z-index:2;margin-top:auto;margin-bottom:66px;font-family:'Space Mono';font-size:22px;letter-spacing:.26em;padding:0 26px;color:var(--paper)}
+.l2 .lane-n{font-family:'Unbounded';font-weight:900;font-size:118px;letter-spacing:0;color:transparent;-webkit-text-stroke:2.5px var(--acc);padding:26px 26px 0}
+.lane-title{position:relative;z-index:2;font-family:'Unbounded';font-weight:800;font-size:40px;line-height:1.02;text-transform:uppercase;padding:8px 26px 0}
+.l2 .lane-mid{position:relative;z-index:2;margin-top:auto;margin-bottom:60px;font-size:21px;line-height:1.5;color:rgba(248,250,252,.82);padding:0 26px}
+.l3 .a6-mini{position:relative;flex:1;margin:16px 16px 0;border:2px solid rgba(248,250,252,.35);overflow:hidden}
+.l3 .a6-mini img{position:absolute;inset:0}
+.l3 .lane-mid{margin:18px 0 60px}
+.l3 .stampel{position:static;align-self:flex-start;margin:0 26px 24px;font-size:22px;color:var(--acc);padding:9px 16px}
+.a6-ribbon{height:11px;margin:20px 0 18px;background:repeating-linear-gradient(90deg,var(--acc) 0 48px,transparent 48px 66px);opacity:.85}
+.a6-hint{display:flex;justify-content:space-between;align-items:center;font-family:'Space Mono';font-size:22px;letter-spacing:.24em;color:rgba(248,250,252,.72)}
+.a6-dots i{display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid var(--paper);margin-left:12px}
+.a6-dots i.on{background:var(--grass);border-color:var(--grass)}
+.story .a6-lanes{flex-direction:column}
+.story .lane{flex:none;height:31%}
+.story .l2{height:34%}
+.story .l2 .lane-n{font-size:88px}
+.story .lane-title{font-size:46px}
+.story .l2 .lane-mid{font-size:25px}
+.story .a6-hint{font-size:24px}
+
+/* — A7 · Typography Explosion / Tipografia Explosiva — */
+.a7{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:120px 80px;overflow:hidden}
+.a7-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(16,232,104,.15),transparent 50%),radial-gradient(ellipse at 70% 80%,rgba(245,158,11,.15),transparent 50%);z-index:0}
+.a7-word{position:absolute;font-family:'Unbounded';font-weight:900;text-transform:uppercase;opacity:.12;color:var(--acc);z-index:1}
+.a7-w1{font-size:280px;top:-40px;left:-60px;transform:rotate(-12deg)}
+.a7-w2{font-size:220px;bottom:80px;right:-40px;transform:rotate(8deg)}
+.a7-w3{font-size:180px;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-5deg)}
+.a7-content{position:relative;z-index:2;text-align:center;display:flex;flex-direction:column;gap:40px;align-items:center}
+.a7-kicker{font-family:'Space Mono';font-size:22px;letter-spacing:.4em;color:var(--acc);text-transform:uppercase}
+.a7-title{font-family:'Unbounded';font-weight:900;font-size:120px;line-height:.88;text-transform:uppercase;max-width:900px;text-shadow:0 8px 0 rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.3)}
+.a7-hook{font-family:'Archivo';font-size:32px;line-height:1.5;color:rgba(248,250,252,.85);max-width:800px;font-weight:500}
+.a7-divider{width:200px;height:8px;background:linear-gradient(90deg,var(--acc),transparent);border-radius:4px}
+.a7-img{position:absolute;bottom:0;right:0;width:500px;height:400px;object-fit:cover;opacity:.25;mask-image:linear-gradient(to top,black,transparent);z-index:1}
+.story .a7-title{font-size:140px;max-width:850px}
+.story .a7-hook{font-size:36px}
+.story .a7-w1{font-size:320px}
+.story .a7-w2{font-size:260px}
+
+/* — A8 · Polaroid Gallery / Galeria Polaroid — */
+.a8{position:absolute;inset:0;z-index:2;padding:140px 60px 100px;display:flex;flex-direction:column;align-items:center;gap:50px}
+.a8-header{text-align:center;z-index:3}
+.a8-title{font-family:'Unbounded';font-weight:900;font-size:68px;line-height:.95;text-transform:uppercase;margin-bottom:16px}
+.a8-subtitle{font-family:'Space Mono';font-size:20px;letter-spacing:.3em;color:rgba(248,250,252,.6);text-transform:uppercase}
+.a8-gallery{position:relative;width:100%;height:700px;flex:1}
+.a8-polaroid{position:absolute;background:var(--paper);padding:16px 16px 60px;box-shadow:0 20px 50px rgba(0,0,0,.5),0 8px 16px rgba(0,0,0,.3);transition:transform .3s}
+.a8-polaroid img{width:100%;height:280px;object-fit:cover;display:block}
+.a8-cap{position:absolute;bottom:16px;left:16px;right:16px;font-family:'Space Mono';font-size:16px;color:#333;line-height:1.3}
+.a8-p1{width:320px;top:20px;left:40px;transform:rotate(-6deg)}
+.a8-p2{width:300px;top:80px;right:60px;transform:rotate(4deg)}
+.a8-p3{width:340px;bottom:40px;left:120px;transform:rotate(2deg)}
+.a8-p4{width:280px;bottom:80px;right:140px;transform:rotate(-3deg)}
+.a8-tape{position:absolute;width:120px;height:36px;background:rgba(245,158,11,.8);clip-path:polygon(0 20%,100% 0,100% 80%,0 100%)}
+.a8-t1{top:10px;left:-30px;transform:rotate(-35deg)}
+.a8-t2{top:14px;right:-28px;transform:rotate(32deg)}
+.a8-hook{position:relative;z-index:3;font-family:'Archivo';font-size:26px;line-height:1.6;color:rgba(248,250,252,.8);text-align:center;max-width:800px;margin-top:auto}
+.story .a8-title{font-size:80px}
+.story .a8-gallery{height:900px}
+.story .a8-polaroid img{height:340px}
+.story .a8-p1{width:360px}
+.story .a8-p2{width:340px}
+.story .a8-p3{width:380px}
+.story .a8-p4{width:320px}
+
+/* — A9 · Minimalist Quote / Citação Minimalista — */
+.a9{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:160px 120px;background:linear-gradient(135deg,#0D0F12 0%,#161A22 100%)}
+.a9-mark{position:absolute;top:120px;left:120px;font-family:'Unbounded';font-weight:900;font-size:200px;color:var(--acc);opacity:.15;line-height:1}
+.a9-content{position:relative;z-index:2;text-align:center;display:flex;flex-direction:column;gap:50px;align-items:center;max-width:840px}
+.a9-quote{font-family:'Unbounded';font-weight:900;font-size:64px;line-height:1.15;text-transform:uppercase;letter-spacing:-.02em}
+.a9-quote .acc{color:var(--acc)}
+.a9-divider{width:120px;height:4px;background:var(--acc)}
+.a9-attr{font-family:'Space Mono';font-size:22px;letter-spacing:.25em;color:rgba(248,250,252,.7);text-transform:uppercase}
+.a9-hook{font-family:'Archivo';font-size:28px;line-height:1.6;color:rgba(248,250,252,.75);font-weight:400;max-width:760px}
+.a9-img{position:absolute;bottom:0;left:0;width:400px;height:300px;object-fit:cover;opacity:.2;mask-image:linear-gradient(to right,black,transparent)}
+.a9-corner{position:absolute;width:60px;height:60px;border:3px solid var(--acc);opacity:.4}
+.a9-c1{top:80px;right:80px;border-left:0;border-bottom:0}
+.a9-c2{bottom:80px;left:80px;border-right:0;border-top:0}
+.story .a9-quote{font-size:76px}
+.story .a9-hook{font-size:32px}
+.story .a9-mark{font-size:240px}
+
+/* ===== responsivo ===== */
+@media(max-width:1100px){.toolbar{grid-template-columns:1fr}.m-shell{grid-template-columns:1fr;overflow:auto;place-items:start center}}
+@media(max-width:640px){.mast,.toolbar,.grid,.foot{padding-left:18px;padding-right:18px}.grid{grid-template-columns:1fr 1fr;gap:12px}.grid.story{grid-template-columns:1fr 1fr}.crow2 button span{display:none}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<canvas id="bg3d"></canvas>
+<div class="gridlines" id="gridlines"></div>
+
+<!-- ══════════ MASTHEAD ══════════ -->
+<header class="mast">
+  <div>
+    <div class="logo"><span class="sq"></span>EXME<span class="reg">®</span></div>
+    <div class="logo-sub mono">CASA DO COLECIONADOR MODERNO · ESTÚDIO DE ARQUIVO · 90 PEÇAS</div>
+  </div>
+  <div class="mast-r">
+    <div class="seg" id="segFormat" role="tablist">
+      <button data-fmt="feed" class="on">FEED 4:5</button>
+      <button data-fmt="story">STORY 9:16</button>
+    </div>
+    <button class="btn btn-grass" id="btnRasgar"><i data-lucide="shuffle"></i> RASGAR SAQUETA</button>
+    <div class="dd" id="ddZip">
+      <button class="btn btn-gold" id="btnDd"><i data-lucide="archive"></i> GAVETA ZIP <span class="mono">▾</span></button>
+      <div class="dd-menu" id="ddMenu"></div>
+    </div>
+  </div>
+</header>
+
+<div class="ticker"><div class="ticker-in" id="tickerIn"></div></div>
+<div class="tear"></div>
+
+<!-- ══════════ GAVETAS DE FILTRO + LEDGER ══════════ -->
+<main>
+<section class="toolbar">
+  <div class="drawer">
+    <div class="drawer-head mono"><span>GAVETA 01 — PILAR ESTRATÉGICO</span><button class="link mono" id="btnClear">limpar gavetas</button></div>
+    <div class="chips" id="chipsPillar"></div>
+    <div class="drawer-head mono"><span>GAVETA 02 — ARQUÉTIPO VISUAL</span></div>
+    <div class="chips" id="chipsArch"></div>
+  </div>
+  <aside class="ledger">
+    <div class="stat mono">EM EXPOSIÇÃO<b id="stShown">90 / 90</b>peças do arquivo vivo</div>
+    <details class="matrix" open>
+      <summary>MATRIZ ESTRATÉGICA ▾</summary>
+      <table>
+        <tr><th>PILAR</th><th>%</th><th>Nº</th><th>ARQUÉT.</th></tr>
+        <tr><td>Nostalgia Emocional</td><td>29</td><td><b>26</b></td><td>A5·A2·A4·A7·A9</td></tr>
+        <tr><td>Humor de Colecionador</td><td>20</td><td><b>18</b></td><td>A3·A2·A7</td></tr>
+        <tr><td>Comunidade &amp; Interação</td><td>20</td><td><b>18</b></td><td>A1·A3·A8·CRS</td></tr>
+        <tr><td>Ritual &amp; Gamificação</td><td>16</td><td><b>14</b></td><td>A6·A1·A2·CRS</td></tr>
+        <tr><td>Cultura &amp; Storytelling</td><td>10</td><td><b>9</b></td><td>A4·A5·A3·A9</td></tr>
+        <tr><td>Produto &amp; Phygital</td><td>6</td><td><b>5</b></td><td>A1·A3·A5·A8</td></tr>
+        <tr><td><b>TOTAL</b></td><td>100</td><td><b>90</b></td><td>9 + CRS</td></tr>
+      </table>
+    </details>
+    <ul class="notes">
+      <li>cada peça exporta em FEED + STORY · PNG 2x e SVG com nós editáveis</li>
+      <li>arrasta uma imagem tua para qualquer peça — o cromo substitui na hora</li>
+      <li>legenda.txt traz o copy PT-PT · image_prompt.txt traz o prompt MJ v6 / Flux</li>
+      <li>passeia o rato sobre as peças: o foil holográfico responde ao toque</li>
+    </ul>
+  </aside>
+</section>
+
+<section class="grid" id="grid"></section>
+</main>
+
+<footer class="foot">
+  <span><b>EXME®</b> — CASA DO COLECIONADOR MODERNO</span>
+  <span>arquivo gerado localmente no teu browser · nenhum cromo foi vincado durante a exportação</span>
+  <span>EXME.CLUB · <b>TU ÉS COLECIONADOR</b></span>
+</footer>
+
+<!-- ══════════ MODAL ══════════ -->
+<div class="modal" id="modal">
+  <div class="m-shell">
+    <div class="m-prev">
+      <div class="m-tear" id="mTear"><div class="pvwrap" id="mWrap"><div class="pvscale" id="mStage"></div></div></div>
+    </div>
+    <div class="m-panel">
+      <div class="m-head mono"><span id="mSerial">EXM-000</span><button class="x" id="mClose" title="fechar (Esc)"><i data-lucide="x"></i></button></div>
+      <div class="m-title" id="mTitle"></div>
+      <div class="m-tags mono" id="mTags"></div>
+      <div class="tabs">
+        <button data-tab="leg" class="on">LEGENDA.TXT</button>
+        <button data-tab="pr">IMAGE_PROMPT.TXT</button>
+      </div>
+      <pre id="mLeg"></pre>
+      <pre id="mPr" style="display:none"></pre>
+      <div class="m-acts">
+        <button class="btn btn-grass" id="mPng"><i data-lucide="image-down"></i> PNG 2X</button>
+        <button class="btn btn-paper" id="mSvg"><i data-lucide="file-code-2"></i> SVG EDITÁVEL</button>
+        <button class="btn btn-gold" id="mZip"><i data-lucide="folder-archive"></i> ZIP DA PEÇA</button>
+        <button class="btn btn-paper" id="mImg"><i data-lucide="image-plus"></i> TROCAR CROMO</button>
+      </div>
+      <div class="m-nav mono"><button id="mPrev">← ANTERIOR</button><span id="mPos"></span><button id="mNext">SEGUINTE →</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><div class="t-bar"><i id="tBar"></i></div><span class="mono" id="tLabel">A EMPACOTAR…</span></div>
+<input type="file" id="fileIn" accept="image/*" hidden>
+
+<script>
+'use strict';
+/* ════════════════════════════════════════════════════════
+   0 · UTILITÁRIOS
+   ════════════════════════════════════════════════════════ */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const slug=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+const pad=(n,l=2)=>String(n).padStart(l,'0');
+const hsh=s=>{let h=9;for(let i=0;i<s.length;i++)h=Math.imul(h^s.charCodeAt(i),387420489);return (h^h>>>9)>>>0};
+const rngOf=a=>{let t=(a+0x6D2B79F5)>>>0;return()=>{t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}};
+const pick=(r,arr)=>arr[Math.floor(r()*arr.length)];
+const wrapWords=(s,n)=>{const w=s.split(' '),L=[''];let i=0;for(const x of w){if((L[i]+' '+x).trim().length>n){L.push(x);i++}else{L[i]=(L[i]+' '+x).trim()}}return L};
+const ri=(r,n)=>Math.floor(r()*n);
+const px=(id,w=1000,h=1250)=>`https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=${w}&h=${h}`;
+
+/* ════════════════════════════════════════════════════════
+   1 · POOLS DE IMAGEM (arquivo fotográfico)
+   ════════════════════════════════════════════════════════ */
+const POOL={
+ estadio:[12074795,15362139,31468214,12537018,30651230,15949231,38587211,34649354],
+ cartoes:[4792371,31296167,37743085,37743086,31296168,6218133,14737806,32771812],
+ miudos:[13517352,32550025,36871438,13517359,36315147,32809836],
+ album:[10092613,6274899,8848784,4394514,30526611,7920988],
+ balneario:[9438081,9442065,34424852,6396259,34424890,4162587]
+};
+
+/* ════════════════════════════════════════════════════════
+   2 · MATRIZ ESTRATÉGICA — 6 pilares × sementes de conteúdo
+   ════════════════════════════════════════════════════════ */
+const ARCHS=[
+ {n:1,nome:'The Vault / Trading Card Foil',curto:'VAULT FOIL'},
+ {n:2,nome:"Collector's Archive / Scrapbook",curto:'SCRAPBOOK'},
+ {n:3,nome:'Digital Nostalgia / 2000s Web UI',curto:'RETRO WEB'},
+ {n:4,nome:'Brutal Quote / Manifesto',curto:'MANIFESTO'},
+ {n:5,nome:'Split Evidence / Relíquia',curto:'RELÍQUIA'},
+ {n:6,nome:'Carrossel Contínuo Ritualístico',curto:'CARROSSEL'},
+ {n:7,nome:'Typography Explosion / Tipografia Explosiva',curto:'TIPO EXPLOSIVA'},
+ {n:8,nome:'Polaroid Gallery / Galeria Polaroid',curto:'POLAROIDS'},
+ {n:9,nome:'Minimalist Quote / Citação Minimalista',curto:'MINIMAL'}
+];
+const PILLARS=[
+{id:'nost',nome:'Nostalgia Emocional',curto:'NOSTALGIA',pct:'30%',cor:'#F59E0B',archC:[5,2,4,7,9,5,2,7],
+ tags:['#NostalgiaDeCromo','#CheiroASaqueta','#CadernetaAntiga'],
+ bodies:[
+ "Há memórias que não se explicam — abrem-se como uma saqueta. «{t}» é disso: do tempo em que a caderneta era o centro do universo e cada repetido uma pequena tragédia.",
+ "Nós não guardámos cromos. Guardámos tardes inteiras, o banco de trás do carro, a papelaria da esquina. Esta peça pertence à gaveta das memórias que cheiram a papel.",
+ "Toda a gente que cresceu com uma caderneta sabe: a nostalgia não se compra, herda-se. Passa de mão em mão como os repetidos no recreio.",
+ "O colecionador nunca deixa de o ser — só muda de gaveta. Hoje a saqueta abre-se no ecrã, mas o arrepio é exatamente o mesmo."],
+ ctas:["Conta-nos: qual foi o cromo que nunca te saiu?","Diz-nos o ano da tua primeira caderneta nos comentários.","Partilha isto com alguém que ainda guarda a gaveta sagrada.","Confessa: também colavas debaixo do cobertor?"],
+ scenes:["close-up of a child's hands tearing open a vintage sticker pack over a worn 1990s football sticker album","an old wooden drawer overflowing with duplicate football stickers and faded photographs, warm tungsten light","a faded family photograph of a boy gluing stickers into an album at a kitchen table, 1994","macro shot of glossy holographic football stickers catching window light, dust floating in the air","a grandfather and grandson looking at an old sticker album together, golden hour through curtains"]},
+{id:'humor',nome:'Humor de Colecionador',curto:'HUMOR',pct:'20%',cor:'#10E868',archC:[3,2,7,3,2,7],
+ tags:['#GavetaDeRepetidos','#HumorDeColecionador','#RirParaNaoChorar'],
+ bodies:[
+ "Rir de nós próprios é o segundo ritual mais antigo do colecionador — logo a seguir a esconder os repetidos das visitas. «{t}», do arquivo do riso.",
+ "Há duas certezas na vida: a morte, os impostos e aquele defesa que sai sempre em triplicado. Esta é a gaveta do humor — entra, os repetidos não mordem.",
+ "O humor de colecionador não se explica, partilha-se. Marca aquele amigo que já chorou por causa de um envelope.",
+ "Terapia? Não. Uma gaveta cheia de repetidos e um grupo de WhatsApp para trocas. Resultado comprovado desde 1986."],
+ ctas:["Confessa o teu repetido mais absurdo nos comentários.","Identifica o negociador do teu grupo de amigos.","Quantos repetidos tens do mesmo jogador? Diz a verdade.","Partilha se também já fizeste câmbio com lanches incluídos."],
+ scenes:["an absurdly overstuffed shoebox of duplicate football stickers spilling onto a school desk","two kids dramatically negotiating a sticker trade at a schoolyard gate, deadpan expressions","a teenager holding a single duplicate sticker up to the light like Hamlet's skull","a messy bedroom floor covered in opened sticker packs and candy wrappers, comedic chaos","a straight-faced kid economist with a handwritten price list for shiny stickers"]},
+{id:'com',nome:'Comunidade & Interação',curto:'COMUNIDADE',pct:'20%',cor:'#E2E8F0',archC:[1,3,8,1,3,8],
+ tags:['#TrocasAbertas','#ComunidadeExMe','#BalnearioDigital'],
+ bodies:[
+ "Esta casa só existe porque há gavetas abertas em todo o país. «{t}» — entra na roda, ninguém fica de fora da troca.",
+ "O balneário mudou de sítio: agora é aqui, nos comentários. Traz os teus repetidos e a tua melhor história.",
+ "Uma coleção sozinha é um arquivo; com outros, é uma cultura. Conta-nos a tua parte — a caderneta agradece.",
+ "Dizem que quem troca cromos não perde amigos. Nós confirmamos: só ganha. Deixa a tua proposta abaixo."],
+ ctas:["Deixa a tua proposta de troca nos comentários.","Responde: qual foi a tua primeira caderneta?","Marca um colecionador que precisa de ver isto.","Vota nos comentários e defende a tua gaveta."],
+ scenes:["a circle of friends trading football stickers around a café table, hands reaching in, warm night light","two generations — father and daughter — comparing sticker albums across a kitchen table","a crowd of collectors at a community swap meet holding up albums, wide shot","a phone screen showing a sticker trade chat overlaid on real hands exchanging stickers","kids leaning over a shared sticker album on a park bench, late afternoon sun"]},
+{id:'rit',nome:'Ritual & Gamificação',curto:'RITUAL',pct:'15%',cor:'#10E868',archC:[6,1,2,8,6,1],holo:true,
+ tags:['#RitualDaSaqueta','#DopaminaDourada','#ExMeSpinners'],
+ bodies:[
+ "O ritual é sagrado e tem ordem: apalpar, rasgar, respirar, revelar. «{t}», do manual não oficial do colecionador.",
+ "Há quem chame superstição; nós chamamos técnica. A saqueta não se abre — celebra-se.",
+ "Cada gesto tem história: o polegar no canto, o plástico a estalar, o brilho a aparecer de mansinho. Isto é coreografia de colecionador.",
+ "Não é mania, é método. E o método manda que a última saqueta se guarde para quando estiver alguém a ver."],
+ ctas:["Rasgas por cima ou por baixo? Responde.","Descreve o teu ritual em três palavras.","Gira a roleta ExMe Spinners no perfil.","Guarda este post para o próximo domingo de saquetas."],
+ scenes:["extreme macro of a thumb pressing the corner of a sealed sticker pack, backlit, suspenseful","slow ritual: hands folding back a sticker pack flap one frame at a time, dramatic shadow","a golden holographic sticker revealed between fingers, sparks of light, dark background","an ordered desk: sorted piles of duplicates by club and year, top-down shot","a family Sunday breakfast scene with a sticker pack on the table, steam rising from coffee"]},
+{id:'cult',nome:'Cultura & Storytelling',curto:'CULTURA',pct:'10%',cor:'#F8FAFC',archC:[4,5,3,9,4,5],
+ tags:['#ArquivoVivo','#LendasLocais','#CulturaDeBancada'],
+ bodies:[
+ "Antes de serem relíquia, foram domingo à tarde. O arquivo guarda o que o jornal esqueceu: «{t}».",
+ "O desporto de formação constrói-se em silêncios de domingo e cadernetas mal coladas. Este registo é prova documental.",
+ "As lendas locais não têm estátua — têm cromo. E é no cromo que ficam para sempre.",
+ "Cultura popular é isto: papel barato, memória cara. O resto é conversa."],
+ ctas:["Conheces uma lenda local que merecia cromo? Conta-nos.","Diz-nos que mitos de cromos corriam na tua terra.","Partilha com quem sabe o valor de uma caderneta antiga.","Que peça queres ver catalogada a seguir?"],
+ scenes:["mythical rare football sticker pinned under glass in a dark archive room, single spotlight","a local amateur football team portrait from the 1970s, grainy, standing in front of a small-town clubhouse","a typographic detail of vintage sticker lettering and one-color club crests, extreme macro","an old newsstand in a Portuguese village selling sticker packs, 1988, film photograph","yellowed newspaper clippings and sticker sheets spread on an archivist's desk, white gloves"]},
+{id:'prod',nome:'Produto & Phygital',curto:'PHYGITAL',pct:'5%',cor:'#10E868',archC:[1,3,5,8,9],
+ tags:['#Phygital','#SmartMatch','#AlbumEmCasa'],
+ bodies:[
+ "A ExMe fez uma promessa simples: a emoção da saqueta, sem perder o objeto. «{t}» — o phygital sem pinos.",
+ "Completar no ecrã é só metade do ritual. A outra metade tem peso, cheiro e lugar na gaveta: o álbum impresso a chegar a casa.",
+ "O smart match faz o trabalho chato — encontra o teu repetido do outro lado do país. Tu ficas com a parte boa: a troca."],
+ ctas:["Experimenta o smart match no perfil da ExMe.","Completa no ecrã, recebe em casa: link na bio.","Conta-nos como foi abrir o teu álbum impresso.","Segue a casa e não percas a próxima saqueta."],
+ scenes:["a smartphone showing a completed digital sticker album beside its freshly printed physical album, morning light","a split image: glowing screen album on the left, hands unwrapping the printed album box on the right","a courier parcel opened to reveal a hardcover printed sticker album with a green ribbon","a futuristic-yet-warm scene: thin algorithm lines connecting two collectors' drawers across a dark room"]}
+];
+const GLOBAL_TAGS=['#ExMe','#CasaDoColecionador','#TuEsColecionador','#Cromos','#FutebolDeFormacao'];
+const STAMPS=['RARO','ARQUIVO','1ª MÃO','CLÁSSICO','EDIÇÃO LIMITADA','RELÍQUIA','PEÇA ÚNICA'];
+const ESTADOS=['CANTOS GASTOS','IMPECÁVEL','VINCADO COM AMOR','CHEIRA A 1994','RESTAURO PENDENTE'];
+const USERS=['cromos_do_norte','gaveta_86','trocas_e_baldrocas','o_ricaco_do_recreio','mister_saqueta','coleccionador75','fila_da_papelaria','brilhante_bruno','o_247','dama_das_trocas'];
+const PROVS=['gaveta do avô, Porto','caixa de sapatos, Braga','mala do carro, Évora','estojo azul, Coimbra','café Central, Viseu','sótão da tia, Faro'];
+const ARQS=['M. SANCHES','R. FONTE','T. BALEIZÃO','J. CARDOSO','A. VAZ'];
+const LEGFOTO=['fotografia da gaveta pessoal','registo nº 3 do rolo de 35mm','digitalização do álbum de família','prova de autor, 1997'];
+const NOTAS=['os cantos foram colados com cola UHU, como manda a lei','repetidos devolvidos ao dono na terça','proibido dobrar — perguntar porquê ao arquivista','há dedadas autênticas nesta folha. não limpar.','o carimbo foi aplicado à mão, com paciência de domingo'];
+const DIRNOTES={1:'o objeto central ocupa 60% do quadro; o brilho holográfico vem da esquerda; manter o fundo em ardósia profunda',
+2:'grão de filme visível; fita adesiva real nos cantos; leve desalinho propositado, como colado à pressa',
+3:'brilho CRT subtil; paleta limitada a verde fósforo e prata; arestas de UI pixel-perfect',
+4:'a tipografia domina 70% do quadro; contraste brutal entre letra e fotografia; respiração mínima',
+5:'a fotografia parece encontrada numa gaveta: riscos, sépia, cantos moles; a tipografia abaixo é cirúrgica',
+6:'continuidade visual entre as três lâminas; o olho deve deslizar da esquerda para a direita sem tropeçar',
+7:'a palavra-chave domina o quadro em escala arquitetónica; camadas tipográficas sobrepostas a 12% de opacidade; um único ponto de cor de acento',
+8:'três a quatro polaroids espalhadas com rotações naturais entre -6 e 4 graus; fita-cola fosca; margens brancas generosas; legendas manuscritas',
+9:'espaço negativo em 60% do quadro; uma só frase em display; canto de imagem sugerido, nunca central; zero ornamentos'};
+const CAMS={1:'monumental trading-card composition, centered relic, holographic foil rim light, deep slate background',
+2:'scrapbook flat-lay, washi tape corners, rotated cutouts, fanzine collage energy',
+3:'early-2000s web forum aesthetic, CRT glow, pixel-soft edges, UI chrome framing',
+4:'brutalist editorial typography over the image, massive contrast, negative space',
+5:'split-frame evidence layout, sepia archival photo on top, catalog typography below',
+6:'triptych panoramic sequence, continuous motion left to right, ritual in three acts',
+7:'oversized typographic poster composition, layered translucent letterforms, single accent color, high contrast',
+8:'scattered polaroid photos on a dark desk, natural rotations, soft lamp light, handwritten captions, shallow depth of field',
+9:'minimalist negative space composition, one hero object isolated, cinematic soft light, muted palette, editorial restraint'};
+const GRADE='shot on 35mm Kodak Portra 400, cinematic rim lighting, deep slate shadows with electric green accents, holographic gold highlights, subtle film grain, archival scan feel, hyperdetailed, --v 6.0 --style raw';
+
+/* sementes: [título, gancho, tema fotográfico] */
+const SEEDS={
+nost:[
+["O Cheiro da Saqueta","Papel, tinta e possibilidade: três segundos que cheiravam a Natal fora de época.","album"],
+["O Cromo 247","Faltava só um. O 247. Sabia o nome de cor sem nunca o ter visto colado.","album"],
+["Colar Sem Vincos","Respirar fundo, alinhar os cantos, colar de uma vez. Cirurgia de mãos pequenas.","miudos"],
+["A Caderneta do Meu Pai","Está na gaveta dele desde 1986. Os cantos gastos contam mais do que qualquer fotografia.","album"],
+["Domingo de Saquetas","Jornal aberto, caderneta no colo e a saqueta pedida com jeitinho à saída da missa.","estadio"],
+["A Mesada Inteirinha","Dois euros e cinquenta. A decisão financeira mais importante da semana cheirava a papel.","cartoes"],
+["O Brilho no Escuro","Havia um cromo que brilhava. Ficava a olhar para ele no escuro como quem guarda um segredo.","cartoes"],
+["Trocas no Portão","«Dou-te dois pelo sete.» A primeira bolsa de valores da minha vida ficava no portão da escola.","miudos"],
+["A Gaveta Sagrada","A terceira gaveta da cómoda era cofre, banco e altar. Repetidos incluídos.","album"],
+["A Tinta Ainda Quente","A saqueta abria-se pelo canto, devagar, para o cheiro durar mais tempo.","cartoes"],
+["O Ano em que Falhou","A caderneta ficou a meio. Ainda hoje sei exatamente em que número parei.","album"],
+["Herança de Irmão","Herdar a caderneta do irmão mais velho era herdar um país com as fronteiras já coladas.","album"],
+["O Repetido que Doía","Tirar repetido quando faltavam três era um luto pequeno, aprendido cedo.","cartoes"],
+["Férias e Papelarias","Cada terra nova tinha uma papelaria nova. Colecionar era também fazer geografia.","miudos"],
+["Colar à Meia-Noite","Proibido colar depois das dez. Colávamos na mesma, debaixo do cobertor, com lanterna.","miudos"],
+["O Cromo do Capitão","O capitão vinha sempre no fim. Guardávamos o lugar dele como quem guarda cadeira a alguém.","estadio"],
+["Mãos Pequenas, Ritual Grande","O envelope na mão, o polegar a rasgar, o mundo inteiro em cinco cromos.","cartoes"],
+["A Última em Papel","Há uma última caderneta em papel para cada um de nós. A minha cheira a 1998.","album"],
+["O Cheiro do Papel","Há um aroma que nenhuma memória digital consegue guardar. O papel de 1994 tem o seu próprio perfume.","album"],
+["A Primeira Colagem","As mãos tremiam. A cola era pouca. Mas aquele cromo ficou alinhado como obra de mestre.","miudos"],
+["Gavetas que Falam","Cada gaveta guarda mais do que papel. Guarda domingos, tardes e cheiro a infância.","album"],
+["O Número que Faltava","Faltava o 312. Todos sabiam. Ninguém dizia. Era o mistério sagrado da caderneta.","cartoes"],
+["Tardes de Papelaria","A papelaria era templo. O balcão era altar. E a saqueta era oferenda.","miudos"],
+["O Álbum do Avô","As páginas amarelecidas contam mais do que fotografias. Têm dedos que já não existem.","album"],
+["Memória de Tinta","A tinta desbota, mas a memória não. Cada cromo é uma cápsula do tempo.","cartoes"],
+["O Envelope Vazio","Guardávamos o envelope vazio como quem guarda um bilhete de cinema. Ainda cheirava a possibilidade.","album"]],
+humor:[
+["A Gaveta de Repetidos","Tenho 43 vezes o mesmo defesa esquerdo. Ele já é mais meu do que do clube.","cartoes"],
+["Economia de Recreio","«Um brilhante vale cinco normais e um lanche.» Nunca estudei tanto câmbio na vida.","miudos"],
+["Colei Torto","Colei torto e vivi com isso. Há cicatrizes que fazem parte da caderneta.","album"],
+["O Falso Riquinho","Comprava duas saquetas à frente dos outros e escondia as lágrimas do repetido.","cartoes"],
+["Negociei Como um Tubarão","Troquei o guarda-redes titular por três médios e um iogurte. Ainda me chamam génio.","miudos"],
+["Apalpar o Envelope","Dizia que sabia pelo tato qual era o brilhante. Nunca acertei. Nunca deixei de tentar.","cartoes"],
+["O Último Espaço Vazio","O último espaço da caderneta olha para ti como um lugar à mesa por preencher.","album"],
+["O Cão Comeu a Caderneta","Literalmente. O labrador do vizinho tem o meu 1986 na consciência.","miudos"],
+["Rei dos Repetidos","Já não coleciono cromos. Coleciono a esperança de que um dia deixem de ser repetidos.","cartoes"],
+["A Mãe e a Gaveta","«Isto um dia ainda vai para o lixo.» Mãe, isso é património classificado.","album"],
+["Rasguei Demasiado Cedo","Abrir a saqueta antes de chegar a casa dava azar. Toda a gente sabia. Eu abria.","cartoes"],
+["O Colega que Tinha Tudo","Havia sempre um com a caderneta completa em outubro. Ninguém gostava dele. Todos queríamos ser ele.","miudos"],
+["O Rei dos Repetidos","Tinha tantos repetidos que abri um negócio. Falência em três semanas.","cartoes"],
+["A Troca Impossível","«Do-te três pelo sete.» Resposta: «O sete não está à venda.» Drama.","miudos"],
+["Cromos no Bolso","Levava os cromos para todo o lado. Até ao banho. A mãe descobriu.","cartoes"],
+["O Falso Brilhante","Parecia brilhante. Não era. Ainda hoje dói.","cartoes"],
+["A Gaveta Proibida","«Não mexe aí.» Era onde estava o cromo que faltava ao meu irmão.","album"],
+["O Cão Colecionador","O cão comia cromos. Só os repetidos. Instinto.","miudos"]],
+com:[
+["Qual Foi a Tua Primeira?","Há uma primeira caderneta para todos nós. Diz-nos qual foi a tua — ano, cheiro e tudo.","album"],
+["Batalha de Coleções","Caderneta de 1992 contra caixa de sapatos de 2004. Vota nos comentários.","cartoes"],
+["O Cromo Mais Bizarro","Mostra-nos o cromo mais estranho que já te saiu. Vale tudo: clube, ano, penteado.","cartoes"],
+["Trocas Abertas","Deixa o teu repetido nos comentários. Esta é a gaveta de trocas oficial da casa.","cartoes"],
+["O Teu Repetido Rei","Todos temos um cromo que sai sempre. Apresenta o teu à comunidade.","cartoes"],
+["Duelo de Gavetas","Fotografa a tua gaveta de repetidos. A mais caótica ganha glória eterna.","album"],
+["O Clube da Tua Terra","Diz-nos o clube e nós dizemos-te qual é o cromo que te falta. Confia.","estadio"],
+["Marca um Colecionador","Marca aqui aquele amigo que ainda guarda a caderneta no plástico original.","miudos"],
+["Geração Contra Geração","Pais contra filhos: quem completa a caderneta primeiro? Conta-nos o placar.","album"],
+["O Teu Ritual de Abertura","Rasgar por cima ou por baixo? Este debate divide famílias. Escolhe um lado.","cartoes"],
+["Histórias da Papelaria","Qual foi a papelaria da tua infância? Deixa o nome — vamos fazer o mapa.","miudos"],
+["Coleção ao Vivo","Mostra-nos onde guardas as tuas cadernetas hoje. Sem vergonha. Aqui é seguro.","balneario"],
+["O Colecionador Misterioso","Há alguém aqui que nunca mostra a sua coleção. Quem és tu?","album"],
+["Trocas de Domingo","Domingo é dia de troca. Quem está disponível?","cartoes"],
+["A Maior Coleção","Quem tem a maior coleção aqui? Mostra-nos os números.","album"],
+["Cromos de Outros Tempos","Tens cromos de antes de 1990? Queremos ver.","cartoes"],
+["O Teu Clube do Coração","Diz-nos o teu clube. Vemos se alguém aqui coleciona contigo.","estadio"],
+["Balneário Digital","Este é o nosso balneário. Entra, senta-te, conta histórias.","balneario"]],
+rit:[
+["Anatomia da Saqueta","Lâmina 01: o envelope. Lâmina 02: o rasgar. Lâmina 03: a revelação. Desliza.","cartoes"],
+["A Técnica do Tato","Apertar devagar junto ao canto. Sentir o relevo da tinta. Adivinhar o brilhante.","cartoes"],
+["Dopamina Dourada","O milissegundo entre ver a borda dourada e o grito. É disso que falamos.","cartoes"],
+["Ordem de Colagem","Primeiro os repetidos, depois os novos, o capitão por último. Há uma ordem para tudo.","album"],
+["ExMe Spinners","A roleta não mente: hoje sai saqueta dupla para alguém na sala. Gira.","balneario"],
+["O Som do Plástico","Aquele crec. Há sons que são memória. Este é o nosso.","cartoes"],
+["Ritual de Domingo","Saqueta ao pequeno-almoço. Caderneta à mesa. Família a espreitar por cima do ombro.","miudos"],
+["A Pilha dos Repetidos","Separar por clube, por ano, por estado. Organização é amor com sistema.","cartoes"],
+["O Último Rasgão","A última saqueta da caderneta rasga-se devagar. Ninguém quer que acabe.","estadio"],
+["A Ordem Sagrada","Há uma ordem para colar. Há uma ordem para guardar. Há uma ordem para tudo.","album"],
+["O Momento da Revelação","Entre o envelope aberto e o primeiro vislumbre. É aí que mora a magia.","cartoes"],
+["Ritual de Família","Pai abre, filho cola, mãe organiza. Cada um tem o seu papel.","miudos"],
+["A Primeira Saqueta do Ano","Janeiro. Papelaria. A primeira saqueta do ano novo. Começa tudo de novo.","cartoes"],
+["O Sábado Sagrado","Sábado é dia de papelaria. Não se discute. Não se adia.","album"]],
+cult:[
+["O Mito do 118","Diziam que o 118 nunca vinha nas saquetas do norte. O mito valia mais que o cromo.","album"],
+["Lendas de Bancada","Antes dos estádios cheios, havia o ponta-de-lança da terra. Virou lenda de bancada.","estadio"],
+["O Valor do Amador","O desporto de formação não enche jornais. Enche gavetas — e é lá que fica a história.","balneario"],
+["Cromos Antes da Internet","Antes dos feeds, a novidade chegava em papel. E demorava semanas a ser colada.","album"],
+["A Tipografia da Saudade","Nomes em maiúsculas apertadas, escudos a uma cor. Design que educa o olho.","album"],
+["Arquivo Vivo","Cada caderneta antiga é um censo afetivo: quem jogava, quem treinava, quem vendia as rifas.","estadio"],
+["O Colecionador Esquecido","Havia um homem na terra que guardava tudo. Ninguém sabia o quê. Até que partiu.","album"],
+["Cromos que Contam Histórias","Cada cromo tem uma história. Cada história tem uma terra. Cada terra tem um clube.","estadio"],
+["A Papelaria da Esquina","Era ali que tudo acontecia. As trocas, os rumores, os sonhos.","miudos"]],
+prod:[
+["Do Ecrã à Gaveta","Completaste no ecrã? O álbum físico chega a casa. A magia tem morada.","cartoes"],
+["Smart Match","O algoritmo encontra o teu repetido perfeito noutra gaveta do país. Trocar nunca foi tão justo.","estadio"],
+["O Álbum que se Imprime","A tua caderneta digital torna-se objeto: papel, cheiro e lombada. Phygital é isto.","album"],
+["A Ponte Digital","O digital não substitui o papel. Faz-lhe companhia. Phygital é isto.","estadio"],
+["Completar Sem Sair de Casa","O algoritmo trabalha. Tu esperas. O álbum chega. Simples.","cartoes"]]
+};
+
+/* ════════════════════════════════════════════════════════
+   3 · GERADOR PARAMÉTRICO — monta as 90 peças
+   ════════════════════════════════════════════════════════ */
+const POSTS=[];
+(function build(){
+  let n=0;
+  PILLARS.forEach((P,pi)=>{
+    SEEDS[P.id].forEach((seed,i)=>{
+      n++;
+      const serial='EXM-'+pad(n,3);
+      const r=rngOf(hsh(serial));
+      const arch=P.archC[i%P.archC.length];
+      const pool=POOL[seed[2]];
+      const img=px(pool[ri(r,pool.length)]);
+      const ano=1984+ri(r,22);
+      const body=pick(r,P.bodies).replace('{t}',seed[0]).replace('{s}',serial);
+      const cta=pick(r,P.ctas);
+      const tags=[...P.tags,...GLOBAL_TAGS].join(' ');
+      const scene=pick(r,P.scenes);
+      const promptBase=`${scene}, ${CAMS[arch]}, ${GRADE}`;
+      const isCarousel = (n % 8 === 0);
+      POSTS.push(Object.assign({carousel: isCarousel, slides: isCarousel ? 5 : 1},
+        n,serial,pillar:P,arch,title:seed[0],hook:seed[1],theme:seed[2],img,custom:null,
+        ano,stamp:pick(r,STAMPS),estado:pick(r,ESTADOS),user:pick(r,USERS),
+        prov:pick(r,PROVS),arq:pick(r,ARQS),legFoto:pick(r,LEGFOTO),nota:pick(r,NOTAS),
+        serie:'SÉRIE '+ano+'/'+(ano+1),gaveta:pad(1+ri(r,12)),holo:pad(1+ri(r,500),3),
+        resp:3+ri(r,46),online:12+ri(r,180),
+        hora:pad(9+ri(r,14))+':'+pad(ri(r,60)),
+        cromo:pad(1+ri(r,480),3),
+        body,cta,tags,
+        legenda:`EXME® — CASA DO COLECIONADOR MODERNO\nFORMATO: FEED 1080×1350 · STORY 1080×1920\n────────────────────────────────\n\n${seed[1]}\n\n${body}\n\n${cta}\n\n${tags}\n\n────────────────────────────────\nexme.club · tu és colecionador`,
+        prompt:k=>`PROMPT DE IMAGEM — MIDJOURNEY v6 / FLUX.1\n────────────────────────────────\n[${k}]\n${promptBase} --ar ${k==='FEED 4:5'?'4:5':'9:16'}\n\nnotas de direção: ${DIRNOTES[arch]}\n────────────────────────────────\nsubstituir o sujeito por fotografia própria da comunidade ExMe quando aplicável`
+      });
+    });
+  });
+})();
+
+/* ════════════════════════════════════════════════════════
+   4 · ESTADO + FUNDO VIVO
+   ════════════════════════════════════════════════════════ */
+const state={fmt:'feed',pilar:null,arch:null};
+const fmtH=()=>state.fmt==='feed'?1350:1920;
+
+(function dust(){
+  const cv=$('#bg3d');
+  if(!window.THREE){cv.remove();return}
+  let W=innerWidth,H=innerHeight,mx=0,my=0;
+  const renderer=new THREE.WebGLRenderer({canvas:cv,alpha:true,antialias:true});
+  renderer.setSize(W,H);renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));
+  const scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(60,W/H,.1,100);cam.position.z=30;
+  const N=230,pos=new Float32Array(N*3),col=new Float32Array(N*3);
+  const pal=[[16/255,232/255,104/255],[245/255,158/255,11/255],[226/255,232/255,240/255]];
+  for(let i=0;i<N;i++){pos[i*3]=(Math.random()-.5)*70;pos[i*3+1]=(Math.random()-.5)*44;pos[i*3+2]=(Math.random()-.5)*30;
+    const c=pal[Math.random()<.55?2:(Math.random()<.5?0:1)];col[i*3]=c[0];col[i*3+1]=c[1];col[i*3+2]=c[2]}
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  g.setAttribute('color',new THREE.BufferAttribute(col,3));
+  const m=new THREE.PointsMaterial({size:.22,vertexColors:true,transparent:true,opacity:.5,blending:THREE.AdditiveBlending,depthWrite:false});
+  const pts=new THREE.Points(g,m);scene.add(pts);
+  addEventListener('pointermove',e=>{mx=(e.clientX/W-.5);my=(e.clientY/H-.5);
+    $('#gridlines').style.transform=`translate3d(${mx*-16}px,${my*-12}px,0)`});
+  addEventListener('resize',()=>{W=innerWidth;H=innerHeight;cam.aspect=W/H;cam.updateProjectionMatrix();renderer.setSize(W,H)});
+  const tick=()=>{pts.rotation.y+=.00042;pts.rotation.x+=.00012;
+    cam.position.x+=(mx*3-cam.position.x)*.03;cam.position.y+=(-my*2-cam.position.y)*.03;cam.lookAt(0,0,0);
+    renderer.render(scene,cam);requestAnimationFrame(tick)};tick();
+})();
+
+/* ticker */
+(function(){
+  const words='TU ÉS COLECIONADOR ✶ CROMOS ✶ SAQUETAS ✶ CADERNETAS ✶ REPETIDOS ✶ TROCAS ✶ GAVETA ✶ BALNEÁRIO ✶ RASGAR ✶ ARQUIVO VIVO ✶ EXME.CLUB ✶ ';
+  $('#tickerIn').innerHTML=`<span>${words.repeat(3)}</span><span>${words.repeat(3)}</span>`;
+})();
+
+/* ════════════════════════════════════════════════════════
+   5 · RENDER DOM DAS PEÇAS (palco 1080px real, escalado)
+   ════════════════════════════════════════════════════════ */
+const IMG_MAP={"1": "imagens-v2/001.webp", "2": "imagens-v2/002.webp", "3": "imagens-v2/003.webp", "4": "imagens-v2/004.webp", "5": "imagens-v2/005.webp", "6": "imagens-v2/006.webp", "7": "imagens-v2/007.webp", "8": "imagens-v2/008.webp", "9": "imagens-v2/009.webp", "10": "imagens-v2/010.webp", "11": "imagens-v2/011.webp", "12": "imagens-v2/012.webp", "13": "imagens-v2/013.webp", "14": "imagens-v2/014.webp", "15": "imagens-v2/015.webp", "16": "imagens-v2/016.webp", "17": "imagens-v2/017.webp", "18": "imagens-v2/018.webp", "19": "imagens-v2/019.webp", "20": "imagens-v2/020.webp", "21": "imagens-v2/021.webp", "22": "imagens-v2/022.webp", "23": "imagens-v2/023.webp", "24": "imagens-v2/024.webp", "25": "imagens-v2/025.webp", "26": "imagens-v2/026.webp", "27": "imagens-v2/027.webp", "28": "imagens-v2/028.webp", "29": "imagens-v2/029.webp", "30": "imagens-v2/030.webp", "31": "imagens-v2/031.webp", "32": "imagens-v2/032.webp", "33": "imagens-v2/033.webp", "34": "imagens-v2/034.webp", "35": "imagens-v2/035.webp", "36": "imagens-v2/036.webp", "37": "imagens-v2/037.webp", "38": "imagens-v2/038.webp", "39": "imagens-v2/039.webp", "40": "imagens-v2/040.webp", "41": "imagens-v2/041.webp", "42": "imagens-v2/042.webp", "43": "imagens-v2/043.webp", "44": "imagens-v2/044.webp", "45": "imagens-v2/045.webp", "46": "imagens-v2/046.webp", "47": "imagens-v2/047.webp", "48": "imagens-v2/048.webp", "49": "imagens-v2/049.webp", "50": "imagens-v2/050.webp", "51": "imagens-v2/051.webp", "52": "imagens-v2/052.webp", "53": "imagens-v2/053.webp", "54": "imagens-v2/054.webp", "55": "imagens-v2/055.webp", "56": "imagens-v2/056.webp", "57": "imagens-v2/057.webp", "58": "imagens-v2/058.webp", "59": "imagens-v2/059.webp", "60": "imagens-v2/060.webp", "61": "imagens-v2/061.webp", "62": "imagens-v2/062.webp", "63": "imagens-v2/063.webp", "64": "imagens-v2/064.webp", "65": "imagens-v2/065.webp", "66": "imagens-v2/066.webp", "67": "imagens-v2/067.webp", "68": "imagens-v2/068.webp", "69": "imagens-v2/069.webp", "70": "imagens-v2/070.webp", "71": "imagens-v2/071.webp", "72": "imagens-v2/072.webp", "73": "imagens-v2/073.webp", "74": "imagens-v2/074.webp", "75": "imagens-v2/075.webp", "76": "imagens-v2/076.webp", "77": "imagens-v2/077.webp", "78": "imagens-v2/078.webp", "79": "imagens-v2/079.webp", "80": "imagens-v2/080.webp", "81": "imagens-v2/081.webp", "82": "imagens-v2/082.webp", "83": "imagens-v2/083.webp", "84": "imagens-v2/084.webp", "85": "imagens-v2/085.webp", "86": "imagens-v2/086.webp", "87": "imagens-v2/087.webp", "88": "imagens-v2/088.webp", "89": "imagens-v2/089.webp", "90": "imagens-v2/090.webp"};
+const imgSrc=p=>p.custom||(IMG_MAP[p.n])||p.img;
+const chromeHTML=p=>`
+ <div class="ch-t"><span class="ch-mid">EXME · CASA DO COLECIONADOR</span></div>
+ <div class="ch-b"><span class="ch-site">EXME.CLUB</span></div>
+ <div class="crops"><i class="c1"></i><i class="c2"></i><i class="c3"></i><i class="c4"></i></div>`;
+const grainHTML='<div class="grain"></div>';
+
+function a1HTML(p){return `<div class="a1">
+ <div class="a1-kicker mono">HOLOGRAMA ${p.holo}/500 · ${p.serie}</div>
+ <div class="a1-card"><div class="a1-frame">
+   <img src="${imgSrc(p)}" alt="" loading="lazy"><div class="a1-foil"></div><div class="a1-sheen"></div>
+   <div class="a1-namebar">${esc(p.title.toUpperCase())} · CROMO Nº ${p.cromo}</div></div>
+   <div class="stampel">${p.stamp}</div></div>
+ <h2 class="a1-title">${esc(p.title)}</h2>
+ <p class="a1-hook">${esc(p.hook)}</p>
+ <div class="a1-stats"><span>ESTADO: ${p.estado}</span><span>${p.serie}</span><span>GAVETA ${p.gaveta}</span></div></div>`}
+
+function a2HTML(p){return `<div class="a2"><div class="a2-paper"></div>
+ <div class="a2-head">FOLHA DE ARQUIVO · ${p.serie} · COLADO À MÃO</div>
+ <div class="a2-photo"><img src="${imgSrc(p)}" alt="" loading="lazy">
+   <i class="tape tp1"></i><i class="tape tp2"></i><div class="a2-cap">${p.legFoto}</div></div>
+ <div class="a2-note">“${esc(p.hook)}”</div>
+ <h2 class="a2-title">${esc(p.title)}</h2>
+ <div class="a2-circ"><span>ARQUIVO<br>★<br>EXME</span></div>
+ <div class="a2-dots"><i class="d1"></i><i class="d2"></i><i class="d3"></i></div>
+ <div class="a2-foot">nota de rodapé — ${p.nota}</div></div>`}
+
+function a3HTML(p){const marq=`+++ TROCAS ABERTAS +++ ${esc(p.title.toUpperCase())} +++ RESPONDE COM O TEU REPETIDO +++ `;
+ return `<div class="a3"><div class="a3-win">
+ <div class="a3-bar"><span class="a3-dots"><i></i><i></i><i></i></span><span class="a3-file">exme_trocas_${p.ano}.exe</span><span class="a3-x">✕</span></div>
+ <div class="a3-menu">FICHEIRO&nbsp;&nbsp;TROCAS&nbsp;&nbsp;EDITAR&nbsp;&nbsp;AJUDA</div>
+ <div class="a3-body">
+   <div class="a3-path">C:\\GAVETA\\REPETIDOS\\${p.serial}.TXT</div>
+   <div class="a3-post"><div class="a3-user">«${p.user}» escreveu às ${p.hora}:</div>
+     <p class="a3-quote">“${esc(p.hook)}”</p>
+     <div class="a3-meta">↳ ${p.resp} respostas · ${p.online} colecionadores online · ${p.serie}</div></div>
+   <div class="a3-imgrow"><img class="a3-thumb" src="${imgSrc(p)}" alt="" loading="lazy">
+     <div class="a3-sidemeta">ANEXO: ${p.legFoto.toUpperCase()}<br>RES: 640×480<br>24 KB · MODEM 56K</div></div>
+   <div class="a3-marq"><span class="a3-track"><span>${marq}</span><span>${marq}</span></span></div>
+ </div></div>
+ <h2 class="a3-title">${esc(p.title)}</h2>
+ <div class="a3-status">LIGADO AO ARQUIVO DESDE ${p.ano} · <span class="cursor">█</span></div></div>`}
+
+function a4HTML(p){return `<img class="a4-bg" src="${imgSrc(p)}" alt="" loading="lazy"><div class="a4-veil"></div>
+ <div class="a4-mark">✶</div>
+ <blockquote class="a4-q">${esc(p.hook.toUpperCase())}<span class="acc">.</span></blockquote>
+ <div class="a4-attr">${esc(p.title.toUpperCase())} · ARQUIVO EXME · ${p.serie}</div>
+ <div class="a4-side">MANIFESTO · PEÇA ${p.n}/${POSTS.length}</div>`}
+
+function a5HTML(p){return `<div class="a5-top"><img class="a5-img" src="${imgSrc(p)}" alt="" loading="lazy">
+ <div class="a5-wear"></div><div class="a5-tear"></div>
+ <div class="a5-plate">PROVA ${p.serial} · ${p.serie}</div></div>
+ <div class="a5-bot">
+   <div class="a5-cat">RELÍQUIA Nº ${p.cromo} — CATALOGADA EM ${p.ano}</div>
+   <h2 class="a5-title">${esc(p.title)}</h2>
+   <p class="a5-desc">${esc(p.hook)}</p>
+   <div class="a5-rows">
+     <div><span>ESTADO</span><b>${p.estado}</b></div>
+     <div><span>PROVENIÊNCIA</span><b>${p.prov}</b></div>
+     <div><span>GAVETA</span><b>${p.gaveta}</b></div>
+     <div><span>ARQUIVISTA</span><b>${p.arq}</b></div></div></div>
+ <div class="stampel">${p.stamp}</div>`}
+
+function a6HTML(p){return `<div class="a6"><div class="a6-lanes">
+ <div class="lane l1"><img src="${imgSrc(p)}" alt="" loading="lazy"><div class="shade"></div>
+   <div class="lane-n">01</div><div class="lane-t">A SAQUETA</div></div>
+ <div class="lane l2"><div class="lane-n">02</div>
+   <h2 class="lane-title">${esc(p.title)}</h2>
+   <div class="lane-mid">${esc(p.hook)}</div></div>
+ <div class="lane l3"><div class="lane-n">03</div>
+   <div class="a6-mini"><img src="${imgSrc(p)}" alt="" loading="lazy"></div>
+   <div class="lane-mid lane-t">A REVELAÇÃO</div>
+   <div class="stampel">${p.stamp}</div></div></div>
+ <div class="a6-ribbon"></div>
+ <div class="a6-hint">DESLIZA PARA CONTINUAR O RITUAL ⟶ <span class="a6-dots"><i class="on"></i><i></i><i></i></span></div></div>`}
+
+function a7HTML(p){return `<div class="a7">
+ <div class="a7-bg"></div>
+ <div class="a7-word a7-w1">${esc(p.title.split(' ')[0].toUpperCase())}</div>
+ <div class="a7-word a7-w2">EXME</div>
+ <div class="a7-word a7-w3">${esc(p.title.split(' ').pop().toUpperCase())}</div>
+ <img class="a7-img" src="${imgSrc(p)}" alt="" loading="lazy">
+ <div class="a7-content">
+   <div class="a7-kicker">${p.stamp}</div>
+   <h2 class="a7-title">${esc(p.title)}</h2>
+   <div class="a7-divider"></div>
+   <p class="a7-hook">${esc(p.hook)}</p>
+ </div></div>`}
+
+function a8HTML(p){return `<div class="a8">
+ <div class="a8-header">
+   <h2 class="a8-title">${esc(p.title)}</h2>
+   <div class="a8-subtitle">${p.serie}</div>
+ </div>
+ <div class="a8-gallery">
+   <div class="a8-polaroid a8-p1">
+     <i class="a8-tape a8-t1"></i>
+     <img src="${imgSrc(p)}" alt="" loading="lazy">
+     <div class="a8-cap">${p.legFoto}</div>
+   </div>
+   <div class="a8-polaroid a8-p2">
+     <i class="a8-tape a8-t2"></i>
+     <img src="${imgSrc(p)}" alt="" loading="lazy">
+     <div class="a8-cap">${p.estado}</div>
+   </div>
+   <div class="a8-polaroid a8-p3">
+     <img src="${imgSrc(p)}" alt="" loading="lazy">
+     <div class="a8-cap">${p.prov}</div>
+   </div>
+   <div class="a8-polaroid a8-p4">
+     <img src="${imgSrc(p)}" alt="" loading="lazy">
+     <div class="a8-cap">${p.arq}</div>
+   </div>
+ </div>
+ <p class="a8-hook">${esc(p.hook)}</p>
+</div>`}
+
+function a9HTML(p){return `<div class="a9">
+ <div class="a9-mark">"</div>
+ <img class="a9-img" src="${imgSrc(p)}" alt="" loading="lazy">
+ <div class="a9-corner a9-c1"></div>
+ <div class="a9-corner a9-c2"></div>
+ <div class="a9-content">
+   <blockquote class="a9-quote">${esc(p.hook.toUpperCase())}<span class="acc">.</span></blockquote>
+   <div class="a9-divider"></div>
+   <div class="a9-attr">${esc(p.title.toUpperCase())} · ${p.serie}</div>
+ </div>
+</div>`}
+
+
+/* ═══ CARROSSÉIS MULTI-SLIDE ═══ */
+function slideHTML(p, i) {
+  const slides = [
+    `<div class="stage ${p.fmt||'feed'}" style="--acc:${p.pillar.cor}"><div class="bg-grid"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:120px;text-align:center">
+        <div style="font-family:'Space Mono';font-size:22px;letter-spacing:.4em;color:var(--acc);margin-bottom:40px">${p.stamp}</div>
+        <h2 style="font-family:'Unbounded';font-weight:900;font-size:90px;line-height:.9;text-transform:uppercase;max-width:900px">${esc(p.title)}</h2>
+        <div style="width:200px;height:8px;background:var(--acc);margin:50px 0;border-radius:4px"></div>
+        <p style="font-size:32px;line-height:1.5;color:rgba(248,250,252,.85);max-width:800px">${esc(p.hook)}</p>
+      </div><div class="grain"></div></div>`,
+    `<div class="stage ${p.fmt||'feed'}" style="--acc:${p.pillar.cor}"><div class="bg-grid"></div>
+      <img src="${imgSrc(p)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.3">
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:100px 120px">
+        <blockquote style="font-family:'Unbounded';font-weight:900;font-size:64px;line-height:1.15;text-transform:uppercase;max-width:840px">${esc(p.hook.toUpperCase())}<span style="color:var(--acc)">.</span></blockquote>
+        <div style="margin-top:50px;font-family:'Space Mono';font-size:22px;letter-spacing:.25em;color:rgba(248,250,252,.7)">${esc(p.title.toUpperCase())}</div>
+      </div><div class="grain"></div></div>`,
+    `<div class="stage ${p.fmt||'feed'}" style="--acc:${p.pillar.cor}"><div class="bg-grid"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:120px;gap:60px">
+        <div style="font-family:'Space Mono';font-size:20px;letter-spacing:.3em;color:var(--acc)">DADOS DO ARQUIVO</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px 80px;font-family:'Space Mono';font-size:24px;width:100%;max-width:800px">
+          <div><span style="color:rgba(248,250,252,.5);font-size:18px;letter-spacing:.2em">ESTADO</span><br><b style="color:var(--paper);font-size:28px">${p.estado}</b></div>
+          <div><span style="color:rgba(248,250,252,.5);font-size:18px;letter-spacing:.2em">ANO</span><br><b style="color:var(--paper);font-size:28px">${p.ano}</b></div>
+          <div><span style="color:rgba(248,250,252,.5);font-size:18px;letter-spacing:.2em">GAVETA</span><br><b style="color:var(--paper);font-size:28px">${p.gaveta}</b></div>
+          <div><span style="color:rgba(248,250,252,.5);font-size:18px;letter-spacing:.2em">CROMO</span><br><b style="color:var(--paper);font-size:28px">Nº ${p.cromo}</b></div>
+        </div>
+      </div><div class="grain"></div></div>`,
+    `<div class="stage ${p.fmt||'feed'}" style="--acc:${p.pillar.cor}"><div class="bg-grid"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:120px;text-align:center;gap:50px">
+        <div style="font-family:'Unbounded';font-weight:900;font-size:48px;line-height:1.2;text-transform:uppercase;max-width:800px">${esc(p.cta)}</div>
+        <div style="width:120px;height:4px;background:var(--acc)"></div>
+        <div style="font-family:'Space Mono';font-size:20px;letter-spacing:.3em;color:rgba(248,250,252,.6)">EXME.CLUB</div>
+      </div><div class="grain"></div></div>`,
+    `<div class="stage ${p.fmt||'feed'}" style="--acc:${p.pillar.cor}"><div class="bg-grid"></div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:120px;text-align:center;gap:40px">
+        <div style="font-family:'Unbounded';font-weight:900;font-size:140px;color:var(--acc);opacity:.3">EXME</div>
+        <div style="font-family:'Space Mono';font-size:22px;letter-spacing:.4em;color:rgba(248,250,252,.7)">CASA DO COLECIONADOR</div>
+        <div style="font-size:28px;line-height:1.6;color:rgba(248,250,252,.6);max-width:700px">${p.tags}</div>
+      </div><div class="grain"></div></div>`
+  ];
+  return slides[i] || slides[0];
+}
+
+const ARCH_HTML={1:a1HTML,2:a2HTML,3:a3HTML,4:a4HTML,5:a5HTML,6:a6HTML,7:a7HTML,8:a8HTML,9:a9HTML};
+function postHTML(p,fmt){return `<div class="stage ${fmt}" style="--acc:${p.pillar.cor}"><div class="bg-grid"></div>${ARCH_HTML[p.arch](p)}${chromeHTML(p)}${grainHTML}</div>`}
+
+/* ════════════════════════════════════════════════════════
+   6 · MURAL, FILTROS, TILT, DRAG & DROP
+   ════════════════════════════════════════════════════════ */
+const grid=$('#grid');
+function cardHTML(p,idx){return `<article class="card" data-n="${p.n}" style="--acc:${p.pillar.cor}">
+ <div class="pvwrap"><div class="pvscale">${postHTML(p,state.fmt)}</div><div class="holo"></div><div class="drop-hint">SOLTA AQUI O TEU CROMO</div></div>
+ <div class="cmeta">
+  <div class="crow1"><span class="ser mono">${p.serial}</span><span class="pill mono" style="--acc:${p.pillar.cor}">${p.pillar.curto}</span>${p.carousel?'<span class="pill mono" style="--acc:var(--grass);background:var(--grass);color:var(--ink);font-weight:700">×5 CARROSSEL</span>':'<span class="arch mono">A${p.arch} · ${ARCHS[p.arch-1].curto}</span>'}</div>
+  <div class="crow2">
+   <button data-act="png" title="Exportar PNG 2x no formato atual"><i data-lucide="image-down"></i><span>PNG</span></button>
+   <button data-act="svg" title="Exportar SVG com nós editáveis"><i data-lucide="file-code-2"></i><span>SVG</span></button>
+   <button data-act="zip" title="ZIP da peça: feed+story, PNG, SVG, legenda e prompt"><i data-lucide="folder-archive"></i><span>ZIP</span></button>
+   <button data-act="img" title="Substituir a imagem da peça"><i data-lucide="image-plus"></i><span>IMG</span></button>
+   <button data-act="open" title="Abrir ficha da peça"><i data-lucide="expand"></i><span>FICHA</span></button>
+  </div></div></article>`}
+
+function filtered(){return POSTS.filter(p=>(!state.pilar||p.pillar.id===state.pilar)&&(!state.arch||p.arch===state.arch))}
+function renderGrid(){
+  const list=filtered();
+  grid.className='grid '+state.fmt;
+  grid.innerHTML=list.map(cardHTML).join('');
+  $('#stShown').textContent=pad(list.length)+' / '+POSTS.length;
+  layoutScale();bindCards();observeReveal();
+  if(window.lucide)lucide.createIcons();
+}
+function layoutScale(){
+  grid.querySelectorAll('.pvwrap').forEach(w=>{
+    const s=w.clientWidth/1080,sc=w.querySelector('.pvscale');
+    sc.style.transform=`scale(${s})`;sc.style.height=fmtH()+'px';
+  });
+}
+let roQueued=false;
+new ResizeObserver(()=>{if(roQueued)return;roQueued=true;requestAnimationFrame(()=>{layoutScale();roQueued=false})}).observe(grid);
+
+/* tilt 3D + holograma */
+function bindCards(){
+  grid.querySelectorAll('.card').forEach(card=>{
+    const wrap=card.querySelector('.pvwrap'),holo=card.querySelector('.holo');
+    card.addEventListener('pointermove',e=>{
+      const r=card.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;
+      card.style.transform=`perspective(900px) rotateX(${(0.5-y)*6}deg) rotateY(${(x-0.5)*7}deg) translateY(-3px)`;
+      holo.style.setProperty('--mx',(x*100)+'%');holo.style.setProperty('--my',(y*100)+'%');
+    });
+    card.addEventListener('pointerleave',()=>{card.style.transform=''});
+    /* drag & drop de imagem */
+    card.addEventListener('dragover',e=>{e.preventDefault();card.classList.add('dropping')});
+    card.addEventListener('dragleave',()=>card.classList.remove('dropping'));
+    card.addEventListener('drop',e=>{e.preventDefault();card.classList.remove('dropping');
+      const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))swapImage(+card.dataset.n,f)});
+  });
+}
+function onGridClick(e){
+  const btn=e.target.closest('button[data-act]');const card=e.target.closest('.card');
+  if(!card)return;const p=POSTS.find(x=>x.n===+card.dataset.n);
+  if(!btn){openModal(p);return}
+  e.stopPropagation();
+  const act=btn.dataset.act;
+  if(act==='png')exportPNG(p,state.fmt);
+  else if(act==='svg')exportSVG(p,state.fmt);
+  else if(act==='zip')zipPost(p);
+  else if(act==='img'){pendingSwap=p.n;$('#fileIn').click()}
+  else if(act==='open')openModal(p);
+}
+let pendingSwap=null;
+$('#fileIn').addEventListener('change',e=>{const f=e.target.files[0];if(f&&pendingSwap)swapImage(pendingSwap,f);e.target.value='';pendingSwap=null});
+function swapImage(n,file){
+  const p=POSTS.find(x=>x.n===n);if(!p)return;
+  const rd=new FileReader();
+  rd.onload=()=>{p.custom=rd.result;
+    const card=grid.querySelector(`.card[data-n="${n}"]`);
+    if(card){const sc=card.querySelector('.pvscale');sc.innerHTML=postHTML(p,state.fmt);layoutScale()}
+    if(modalPost===p){$('#mStage').innerHTML=p.carousel?slideHTML(p,0):postHTML(p,state.fmt);
+  if(p.carousel){$('#mStage').dataset.slides='5';$('#mStage').dataset.current='0'}sizeModal()}
+    toast(100,'CROMO SUBSTITUÍDO · '+p.serial);setTimeout(hideToast,1600)};
+  rd.readAsDataURL(file);
+}
+
+/* revelação ao rolar */
+const io=new IntersectionObserver(es=>es.forEach(en=>{if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target)}}),{rootMargin:'0px 0px -6% 0px'});
+function observeReveal(){grid.querySelectorAll('.card').forEach((c,i)=>{c.style.animationDelay=Math.min(i%9*55,440)+'ms';
+  c.addEventListener('animationend',()=>{c.style.animation='none'},{once:true});io.observe(c)})}
+
+/* chips de filtro */
+(function chips(){
+  $('#chipsPillar').innerHTML=PILLARS.map(P=>`<button class="chip ${P.holo?'holo-chip':''}" data-p="${P.id}" style="--c:${P.cor}"><i></i>${P.curto} <span class="cnt">${PILLARS_SEEDCOUNT(P)}</span></button>`).join('');
+  $('#chipsArch').innerHTML=ARCHS.map(A=>`<button class="chip" data-a="${A.n}" style="--c:#F8FAFC"><i></i>A${A.n} · ${A.curto}</button>`).join('');
+  function PILLARS_SEEDCOUNT(P){return SEEDS[P.id].length}
+  $('#chipsPillar').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;
+    state.pilar=state.pilar===b.dataset.p?null:b.dataset.p;syncChips();renderGrid()});
+  $('#chipsArch').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;
+    state.arch=state.arch===+b.dataset.a?null:+b.dataset.a;syncChips();renderGrid()});
+  $('#btnClear').addEventListener('click',()=>{state.pilar=null;state.arch=null;syncChips();renderGrid()});
+})();
+function syncChips(){
+  $$('#chipsPillar .chip').forEach(c=>c.classList.toggle('on',c.dataset.p===state.pilar));
+  $$('#chipsArch .chip').forEach(c=>c.classList.toggle('on',+c.dataset.a===state.arch));
+}
+
+/* formato */
+$('#segFormat').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  state.fmt=b.dataset.fmt;$$('#segFormat button').forEach(x=>x.classList.toggle('on',x===b));renderGrid()});
+
+/* ════════════════════════════════════════════════════════
+   7 · MODAL
+   ════════════════════════════════════════════════════════ */
+let modalPost=null;
+function openModal(p,tear=false){
+  modalPost=p;
+  $('#mSerial').textContent=`${p.serial} · ${p.pillar.nome.toUpperCase()} · A${p.arch}`;
+  $('#mTitle').textContent=p.title;
+  $('#mTags').textContent=p.pillar.curto+' · '+ARCHS[p.arch-1].curto+' · '+p.serie;
+  $('#mLeg').textContent=p.legenda;$('#mPr').textContent=p.prompt('FEED 4:5')+'\n\n'+p.prompt('STORY 9:16');
+  $('#mStage').innerHTML=p.carousel?slideHTML(p,0):postHTML(p,state.fmt);
+  if(p.carousel){$('#mStage').dataset.slides='5';$('#mStage').dataset.current='0'}
+  const list=filtered(),pos=list.findIndex(x=>x.n===p.n);
+  $('#mPos').textContent=`${pad(Math.max(pos,0)+1)} / ${pad(list.length)}`;
+  $('#modal').classList.add('open');document.body.style.overflow='hidden';
+  const t=$('#mTear');t.classList.remove('tearing');
+  sizeModal();
+  if(tear){void t.offsetWidth;t.classList.add('tearing')}
+  if(window.lucide)lucide.createIcons();
+}
+function sizeModal(){
+  const wrap=$('#mWrap'),sc=$('#mStage');
+  const availH=innerHeight-110,availW=Math.min(innerWidth*0.46,640);
+  const s=Math.min(availH/fmtH(),availW/1080);
+  wrap.style.width=(1080*s)+'px';wrap.style.height=(fmtH()*s)+'px';wrap.style.aspectRatio='auto';
+  sc.style.transform=`scale(${s})`;sc.style.height=fmtH()+'px';
+}
+addEventListener('resize',()=>{if($('#modal').classList.contains('open'))sizeModal()});
+function closeModal(){$('#modal').classList.remove('open');document.body.style.overflow='';modalPost=null}
+$('#mClose').addEventListener('click',closeModal);
+$('#modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
+function navModal(d){if(!modalPost)return;const list=filtered();let i=list.findIndex(x=>x.n===modalPost.n);
+  if(i<0)i=0;i=(i+d+list.length)%list.length;openModal(list[i],true)}
+$('#mPrev').addEventListener('click',()=>navModal(-1));
+$('#mNext').addEventListener('click',()=>navModal(1));
+addEventListener('keydown',e=>{if(!$('#modal').classList.contains('open'))return;
+  if(e.key==='Escape')closeModal();if(e.key==='ArrowLeft')navModal(-1);if(e.key==='ArrowRight')navModal(1)});
+$$('.tabs button').forEach(b=>b.addEventListener('click',()=>{
+  $$('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  $('#mLeg').style.display=b.dataset.tab==='leg'?'':'none';
+  $('#mPr').style.display=b.dataset.tab==='pr'?'':'none'}));
+$('#mPng').addEventListener('click',()=>modalPost&&exportPNG(modalPost,state.fmt));
+$('#mSvg').addEventListener('click',()=>modalPost&&exportSVG(modalPost,state.fmt));
+$('#mZip').addEventListener('click',()=>modalPost&&zipPost(modalPost));
+$('#mImg').addEventListener('click',()=>{if(modalPost){pendingSwap=modalPost.n;$('#fileIn').click()}});
+
+/* rasgar saqueta — peça aleatória */
+$('#btnRasgar').addEventListener('click',()=>{
+  const list=filtered(),p=list[ri(rngOf(Date.now()),list.length)];openModal(p,true)});
+
+/* ════════════════════════════════════════════════════════
+   8 · EXPORTAÇÃO — SVG semântico → PNG 2x → ZIP
+   ════════════════════════════════════════════════════════ */
+const imgCache=new Map();
+function fallbackArt(p){
+  const c=document.createElement('canvas');c.width=1080;c.height=1350;const x=c.getContext('2d');
+  x.fillStyle='#161A22';x.fillRect(0,0,1080,1350);
+  x.strokeStyle='rgba(248,250,252,.06)';x.lineWidth=1;
+  for(let i=0;i<1080;i+=36){x.beginPath();x.moveTo(i,0);x.lineTo(i,1350);x.stroke()}
+  for(let j=0;j<1350;j+=36){x.beginPath();x.moveTo(0,j);x.lineTo(1080,j);x.stroke()}
+  x.fillStyle=p.pillar.cor;x.globalAlpha=.16;
+  for(let i=0;i<14;i++)for(let j=0;j<18;j++){x.beginPath();x.arc(40+i*76,40+j*76,3+(i+j)%4,0,7);x.fill()}
+  x.globalAlpha=1;x.save();x.translate(540,640);x.rotate(-.14);
+  x.fillStyle='#F8FAFC';x.font='900 150px Unbounded, Arial Black, sans-serif';x.textAlign='center';
+  x.fillText(p.serial,0,0);x.restore();
+  x.fillStyle=p.pillar.cor;x.font='700 34px "Space Mono", monospace';x.textAlign='center';
+  x.fillText('ARQUIVO EXME · FOTOGRAFIA POR SUBSTITUIR',540,760);
+  return c.toDataURL('image/png');
+}
+async function ensureImgData(p){
+  const src=p.custom||p.img;
+  if(p.custom)return p.custom;
+  if(imgCache.has(src))return imgCache.get(src);
+  try{
+    const r=await fetch(src,{mode:'cors'});if(!r.ok)throw 0;
+    const b=await r.blob();
+    const d=await new Promise(res=>{const f=new FileReader();f.onload=()=>res(f.result);f.readAsDataURL(b)});
+    imgCache.set(src,d);return d;
+  }catch(e){const d=fallbackArt(p);imgCache.set(src,d);return d}
+}
+
+/* —— fontes embutidas para o SVG/PNG —— */
+let FONT_CSS=null;
+async function loadFontCSS(){
+  if(FONT_CSS!==null)return FONT_CSS;FONT_CSS='';
+  try{
+    const css=await fetch('https://fonts.googleapis.com/css2?family=Unbounded:wght@700;900&family=Space+Mono:wght@400;700&family=Archivo:wght@500;600;800&display=swap').then(r=>r.text());
+    const blocks=css.split('@font-face{').slice(1).map(b=>'@font-face{'+b.split('}')[0]+'}');
+    const latin=blocks.filter(b=>/U\+0000-00FF/.test(b));
+    const done=await Promise.all(latin.map(async b=>{
+      const m=b.match(/url\((https:[^)]+?)\)/);if(!m)return null;
+      const buf=await fetch(m[1]).then(r=>r.arrayBuffer());
+      const u=new Uint8Array(buf);let bin='';for(let i=0;i<u.length;i+=8192)bin+=String.fromCharCode.apply(null,u.subarray(i,i+8192));
+      return b.replace(m[1],'data:font/woff2;base64,'+btoa(bin));
+    }));
+    FONT_CSS=done.filter(Boolean).join('\n');
+  }catch(e){FONT_CSS=''}
+  return FONT_CSS;
+}
+loadFontCSS();
+
+/* —— construtores SVG por arquétipo —— */
+const F_UNB="'Unbounded','Arial Black',sans-serif",F_MONO="'Space Mono','Courier New',monospace",F_ARQ="'Archivo',Arial,sans-serif";
+function svgText(x,y,txt,o={}){
+  const f=o.f||F_MONO,w=o.w||400,s=o.s||24,fill=o.fill||'#F8FAFC',ls=o.ls||0,anc=o.anc||'start';
+  const rot=o.rot?` transform="rotate(${o.rot} ${x} ${y})"`:'';
+  return `<text x="${x}" y="${y}" font-family="${f}" font-weight="${w}" font-size="${s}" fill="${fill}" letter-spacing="${ls}"${anc!=='start'?` text-anchor="${anc}"`:''}${rot} opacity="${o.op??1}">${esc(txt)}</text>`;
+}
+function svgLines(x,y,txt,{max=38,f=F_ARQ,w=600,s=26,fill='#F8FAFC',dy=36,anc='start',ls=0}){
+  return wrapWords(txt,max).map((L,i)=>svgText(x,y+i*dy,L,{f,w,s,fill,anc,ls})).join('');
+}
+function barcodeSVG(x,y,w,h,seed){
+  const r=rngOf(seed);let out='',cx=x;
+  while(cx<x+w-4){const bw=[2,3.4,2,5,2,3.4][ri(r,6)];
+    out+=`<rect x="${cx.toFixed(1)}" y="${y}" width="${bw}" height="${h}" fill="#F8FAFC"/>`;cx+=bw+2+r()*3.4}
+  return `<g id="codigo-barras">${out}</g>`;
+}
+function chromeSVG(p,W,H,U){
+  return `<g id="moldura-arquivo">
+   ${svgText(W/2,70,'EXME · CASA DO COLECIONADOR',{s:19,fill:'#F8FAFC',op:.5,anc:'middle',ls:6})}
+   ${barcodeSVG(W-240,42,174,34,p.n*7)}
+   <rect x="60" y="100" width="26" height="26" fill="none" stroke="#F8FAFC" stroke-opacity=".5" stroke-width="3"/><path d="M60 113h26M73 100v26" stroke="none"/>
+   <rect x="${W-86}" y="100" width="26" height="26" fill="none" stroke="#F8FAFC" stroke-opacity=".5" stroke-width="3"/>
+   <rect x="60" y="${H-126}" width="26" height="26" fill="none" stroke="#F8FAFC" stroke-opacity=".5" stroke-width="3"/>
+   <rect x="${W-86}" y="${H-126}" width="26" height="26" fill="none" stroke="#F8FAFC" stroke-opacity=".5" stroke-width="3"/>
+   <rect x="${W-252}" y="${H-96}" width="186" height="40" fill="none" stroke="#F8FAFC" stroke-opacity=".4" stroke-width="2"/>
+   ${svgText(W-159,H-70,'EXME.CLUB',{s:19,fill:'#F8FAFC',op:.75,anc:'middle',ls:4})}
+  </g>`;
+}
+function stampSVG(cx,cy,txt,col,rot=-8,s=30){
+  const w=txt.length*22+56;
+  return `<g id="carimbo" transform="rotate(${rot} ${cx} ${cy})">
+   <rect x="${cx-w/2}" y="${cy-34}" width="${w}" height="68" fill="rgba(13,15,18,.55)" stroke="${col}" stroke-width="4" stroke-dasharray="10 8"/>
+   ${svgText(cx,cy+11,txt,{s,w:700,fill:col,anc:'middle',ls:7})}</g>`;
+}
+function svgA1(p,fmt,W,H,U,IMG){
+  const st=fmt==='feed';
+  const fx=st?190:150,fy=st?168:200,fw=st?700:780,fh=st?620:960;
+  const titleY=st?900:1290,hookY=titleY+(wrapWords(p.title.toUpperCase(),14).length)*72+46;
+  return `<g id="cromo-monumental">
+   ${svgText(W/2,st?136:168,`HOLOGRAMA ${p.holo}/500 · ${p.serie}`,{s:22,fill:p.pillar.cor,anc:'middle',ls:7})}
+   <rect x="${fx}" y="${fy}" width="${fw}" height="${fh}" rx="36" fill="#161A22" stroke="#E2E8F0" stroke-width="7"/>
+   <clipPath id="${U}-card"><rect x="${fx+18}" y="${fy+18}" width="${fw-36}" height="${fh-92}" rx="22"/></clipPath>
+   <image href="${IMG}" x="${fx+18}" y="${fy+18}" width="${fw-36}" height="${fh-92}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${U}-card)"/>
+   <rect x="${fx+18}" y="${fy+18}" width="${fw-36}" height="${fh-92}" rx="22" fill="url(#${U}-foil)" opacity=".45"/>
+   <rect x="${fx+18}" y="${fy+fh-74}" width="${fw-36}" height="56" fill="#0D0F12" opacity=".85"/>
+   ${svgText(W/2,fy+fh-38,`${p.title.toUpperCase()} · CROMO Nº ${p.cromo}`,{s:21,fill:p.pillar.cor,anc:'middle',ls:4})}
+   ${stampSVG(fx+fw-40,fy+70,p.stamp,p.pillar.cor,-8,28)}
+   <g id="tipografia">${svgLines(W/2,titleY,p.title.toUpperCase(),{max:14,f:F_UNB,w:900,s:st?70:82,dy:st?72:84,anc:'middle'})}
+   ${svgLines(W/2,hookY,p.hook,{max:44,f:F_ARQ,w:500,s:st?25:29,dy:st?38:44,fill:'rgba(248,250,252,.78)',anc:'middle'})}</g>
+   ${svgText(200,H-140,`ESTADO: ${p.estado}`,{s:20,fill:'#F8FAFC',op:.55,ls:2})}
+   ${svgText(W/2,H-140,p.serie,{s:20,fill:'#F8FAFC',op:.55,anc:'middle',ls:2})}
+   ${svgText(W-200,H-140,`GAVETA ${p.gaveta}`,{s:20,fill:'#F8FAFC',op:.55,anc:'end',ls:2})}
+  </g>`;
+}
+function svgA2(p,fmt,W,H,U,IMG){
+  const st=fmt==='feed';
+  const py=st?130:170,pw=st?540:620,ph=st?380:470;
+  return `<g id="scrapbook">
+   <rect x="70" y="112" width="${W-140}" height="${H-224}" fill="#171C25" stroke="#F8FAFC" stroke-opacity=".16" stroke-width="2"/>
+   ${svgText(114,166,`FOLHA DE ARQUIVO · ${p.serie} · COLADO À MÃO`,{s:20,fill:'#F8FAFC',op:.55,ls:5})}
+   <g id="fotografia" transform="rotate(-4 ${116+pw/2} ${py+220})">
+     <rect x="100" y="${py}" width="${pw+32}" height="${ph+72}" fill="#F8FAFC"/>
+     <clipPath id="${U}-foto"><rect x="116" y="${py+16}" width="${pw}" height="${ph}"/></clipPath>
+     <image href="${IMG}" x="116" y="${py+16}" width="${pw}" height="${ph}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${U}-foto)"/>
+     ${svgText(120,py+ph+52,p.legFoto,{s:19,fill:'#333'})}
+     <polygon points="${96-34},${py+6} ${96+116},${py-20} ${96+112},${py+24} ${96-38},${py+48}" fill="#E2E8F0" opacity=".8"/>
+     <polygon points="${116+pw-80},${py-22} ${116+pw+70},${py+4} ${116+pw+64},${py+46} ${116+pw-86},${py+20}" fill="#E2E8F0" opacity=".8"/>
+   </g>
+   <g id="nota" transform="rotate(2.4 ${st?800:790} ${st?250:860})">
+     <rect x="${st?620:560}" y="${st?150:760}" width="${st?360:420}" height="${st?200:230}" fill="${p.pillar.cor}"/>
+     ${svgLines(st?646:588,(st?196:812),`“${p.hook}”`,{max:st?24:26,f:F_MONO,w:700,s:st?23:25,dy:st?33:37,fill:'#0D0F12'})}
+   </g>
+   <g id="titulo" transform="rotate(-1.6 400 ${H-330})">
+     ${svgLines(126,st?H-420:H-560,p.title.toUpperCase(),{max:11,f:F_UNB,w:900,s:st?76:86,dy:st?78:88})}
+   </g>
+   <g id="carimbo-circular" transform="rotate(9 ${W-180} ${H-340})">
+     <circle cx="${W-180}" cy="${st?H-340:H-460}" r="${st?108:124}" fill="none" stroke="${p.pillar.cor}" stroke-width="4" stroke-dasharray="12 9"/>
+     ${svgText(W-180,(st?H-362:H-484),'ARQUIVO',{s:24,w:700,fill:p.pillar.cor,anc:'middle',ls:5})}
+     ${svgText(W-180,(st?H-330:H-452),'★',{s:26,fill:p.pillar.cor,anc:'middle'})}
+     ${svgText(W-180,(st?H-298:H-420),'EXME',{s:24,w:700,fill:p.pillar.cor,anc:'middle',ls:5})}
+   </g>
+   <circle cx="${W-380}" cy="170" r="17" fill="#10E868"/><circle cx="${W-410}" cy="212" r="11" fill="#F59E0B"/><circle cx="${W-356}" cy="226" r="8" fill="#E2E8F0"/>
+   ${svgText(126,H-150,`nota de rodapé — ${p.nota}`,{s:19,fill:'#F8FAFC',op:.55})}
+  </g>`;
+}
+function svgA3(p,fmt,W,H,U,IMG){
+  const st=fmt==='feed';
+  const wy=140,wh=st?830:1030;
+  const marq=`+++ TROCAS ABERTAS +++ ${p.title.toUpperCase()} +++ RESPONDE COM O TEU REPETIDO +++`;
+  return `<g id="janela-retro">
+   <rect x="84" y="${wy+14}" width="${W-140}" height="${wh}" fill="#10E868" opacity=".2"/>
+   <rect x="70" y="${wy}" width="${W-140}" height="${wh}" fill="#10141B" stroke="#E2E8F0" stroke-width="3"/>
+   <rect x="70" y="${wy}" width="${W-140}" height="54" fill="#10E868"/>
+   <rect x="92" y="${wy+19}" width="16" height="16" fill="#0D0F12" opacity=".85"/><rect x="115" y="${wy+19}" width="16" height="16" fill="#0D0F12" opacity=".6"/><rect x="138" y="${wy+19}" width="16" height="16" fill="#0D0F12" opacity=".35"/>
+   ${svgText(W/2,wy+36,`exme_trocas_${p.ano}.exe`,{s:22,w:700,fill:'#0D0F12',anc:'middle'})}
+   ${svgText(W-104,wy+37,'✕',{s:22,w:700,fill:'#0D0F12'})}
+   <rect x="70" y="${wy+54}" width="${W-140}" height="44" fill="#161A22"/>
+   ${svgText(92,wy+83,'FICHEIRO   TROCAS   EDITAR   AJUDA',{s:20,fill:'#F8FAFC',op:.75,ls:2})}
+   ${svgText(108,wy+142,`C:\\GAVETA\\REPETIDOS\\${p.serial}.TXT`,{s:22,fill:'#10E868'})}
+   <rect x="108" y="${wy+162}" width="7" height="196" fill="#10E868"/>
+   ${svgText(132,wy+186,`«${p.user}» escreveu às ${p.hora}:`,{s:23,fill:'#F59E0B'})}
+   ${svgLines(132,wy+228,`“${p.hook}”`,{max:st?40:44,f:F_ARQ,w:600,s:st?32:38,dy:st?42:50})}
+   ${svgText(132,wy+(st?352:392),`↳ ${p.resp} respostas · ${p.online} colecionadores online · ${p.serie}`,{s:20,fill:'#F8FAFC',op:.55})}
+   <clipPath id="${U}-thumb"><rect x="108" y="${wy+(st?384:430)}" width="${st?330:400}" height="${st?230:290}"/></clipPath>
+   <image href="${IMG}" x="108" y="${wy+(st?384:430)}" width="${st?330:400}" height="${st?230:290}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${U}-thumb)"/>
+   <rect x="108" y="${wy+(st?384:430)}" width="${st?330:400}" height="${st?230:290}" fill="none" stroke="#F8FAFC" stroke-opacity=".4" stroke-width="3"/>
+   ${svgText(st?470:540,wy+(st?420:470),'ANEXO: '+p.legFoto.toUpperCase(),{s:20,fill:'#F8FAFC',op:.6})}
+   ${svgText(st?470:540,wy+(st?456:506),'RES: 640×480',{s:20,fill:'#F8FAFC',op:.6})}
+   ${svgText(st?470:540,wy+(st?492:542),'24 KB · MODEM 56K',{s:20,fill:'#F8FAFC',op:.6})}
+   <rect x="108" y="${wy+wh-116}" width="${W-216}" height="52" fill="none" stroke="#10E868" stroke-width="2" stroke-dasharray="8 6"/>
+   ${svgText(126,wy+wh-82,marq.slice(0,52)+'…',{s:21,fill:'#10E868',ls:3})}
+   <g id="titulo-fora">${svgLines(76,wy+wh+96,p.title.toUpperCase(),{max:13,f:F_UNB,w:900,s:st?70:82,dy:st?72:84})}</g>
+   ${svgText(76,H-140,`LIGADO AO ARQUIVO DESDE ${p.ano} · █`,{s:22,fill:'#F8FAFC',op:.6,ls:3})}
+  </g>`;
+}
+function svgA4(p,fmt,W,H,U,IMG){
+  const st=fmt==='feed';
+  const q=wrapWords(p.hook.toUpperCase(),st?13:12);
+  return `<g id="manifesto">
+   <clipPath id="${U}-full"><rect width="${W}" height="${H}"/></clipPath>
+   <image href="${IMG}" width="${W}" height="${H}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${U}-full)"/>
+   <rect width="${W}" height="${H}" fill="url(#${U}-veil)"/>
+   <rect width="${W}" height="${H}" fill="${p.pillar.cor}" opacity=".06"/>
+   ${svgText(70,190,'✶',{f:F_UNB,w:900,s:64,fill:p.pillar.cor})}
+   <g id="citacao">${q.map((L,i)=>svgText(70,(st?300:390)+i*(st?88:100),L+(i===q.length-1?'':''),{f:F_UNB,w:900,s:st?88:100})).join('')}${svgText(70+(q[q.length-1].length)*(st?62:70)+14,(st?300:390)+(q.length-1)*(st?88:100),'.',{f:F_UNB,w:900,s:st?88:100,fill:p.pillar.cor})}</g>
+   ${svgText(70,H-150,`${p.title.toUpperCase()} · ARQUIVO EXME · ${p.serie}`,{s:24,fill:'#F8FAFC',op:.85,ls:4})}
+   ${svgText(W-46,400,`MANIFESTO · PEÇA ${p.n}/${POSTS.length}`,{s:22,fill:'#F8FAFC',op:.5,ls:9,rot:90})}
+  </g>`;
+}
+function svgA5(p,fmt,W,H,U,IMG){
+  const st=fmt==='feed';
+  const ih=st?600:860,by=st?676:944;
+  let tear=`M0 ${ih+12} L0 ${ih-8}`;
+  for(let x=0;x<W;x+=36)tear+=` L${x+18} ${ih+12} L${x+36} ${ih-8}`;
+  tear+=` L${W} ${ih+12} L${W} ${ih+30} L0 ${ih+30} Z`;
+  return `<g id="reliquia">
+   <clipPath id="${U}-top"><rect width="${W}" height="${ih}"/></clipPath>
+   <image href="${IMG}" width="${W}" height="${ih}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${U}-top)"/>
+   <rect width="${W}" height="${ih}" fill="#F59E0B" opacity=".12"/>
+   <rect width="${W}" height="${ih}" fill="#0D0F12" opacity=".18"/>
+   <path d="${tear}" fill="#0D0F12"/>
+   <rect x="34" y="30" width="430" height="44" fill="#0D0F12" opacity=".82" stroke="#F8FAFC" stroke-opacity=".45"/>
+   ${svgText(50,59,`PROVA ${p.serial} · ${p.serie}`,{s:19,ls:4})}
+   <g id="catalogo">
+     ${svgText(70,by,`RELÍQUIA Nº ${p.cromo} — CATALOGADA EM ${p.ano}`,{s:24,fill:p.pillar.cor,ls:5})}
+     ${svgLines(70,by+74,p.title.toUpperCase(),{max:12,f:F_UNB,w:900,s:st?78:88,dy:st?80:90})}
+     ${svgLines(70,by+(st?238:268),p.hook,{max:46,f:F_ARQ,w:500,s:st?27:31,dy:st?40:46,fill:'rgba(248,250,252,.86)'})}
+     <rect x="70" y="${H-330}" width="${W-140}" height="3" fill="#F8FAFC" opacity=".22"/>
+     ${[['ESTADO',p.estado],['PROVENIÊNCIA',p.prov],['GAVETA',p.gaveta],['ARQUIVISTA',p.arq]].map((r,i)=>{
+        const col=i%2,row=Math.floor(i/2),x=70+col*((W-140)/2+22),y=H-282+row*58;
+        return `<rect x="${x}" y="${y+16}" width="${(W-140)/2-22}" height="1" fill="#F8FAFC" opacity=".13"/>
+        ${svgText(x,y,r[0],{s:21,fill:'#F8FAFC',op:.55,ls:2})}${svgText(x+(W-140)/2-22,y,r[1],{s:21,w:700,anc:'end'})}`;
+      }).join('')}
+   </g>
+   ${stampSVG(W-210,by+44,p.stamp,p.pillar.cor,-8,26)}
+  </g>`;
+}
+function svgA6(p,fmt,W,H,U,IMG){
+  const st=fmt==='feed';
+  if(st){
+    const xs=[60,387,714],lw=306,ly=150,lh=850;
+    return `<g id="carrossel">
+     <g id="lamina-01"><rect x="${xs[0]}" y="${ly}" width="${lw}" height="${lh}" fill="#12161E" stroke="#F8FAFC" stroke-opacity=".18" stroke-width="2"/>
+       <clipPath id="${U}-l1"><rect x="${xs[0]}" y="${ly}" width="${lw}" height="${lh}"/></clipPath>
+       <image href="${IMG}" x="${xs[0]}" y="${ly}" width="${lw}" height="${lh}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${U}-l1)"/>
+       <rect x="${xs[0]}" y="${ly}" width="${lw}" height="${lh}" fill="url(#${U}-veil)"/>
+       ${svgText(xs[0]+26,ly+52,'01',{s:26,w:700,fill:p.pillar.cor,ls:8})}
+       ${svgText(xs[0]+26,ly+lh-34,'A SAQUETA',{s:22,ls:6})}</g>
+     <g id="lamina-02"><rect x="${xs[1]}" y="${ly}" width="${lw}" height="${lh}" fill="#12161E" stroke="#F8FAFC" stroke-opacity=".18" stroke-width="2"/>
+       ${svgText(xs[1]+24,ly+128,'02',{f:F_UNB,w:900,s:110,fill:'none',stroke:p.pillar.cor,ls:0})}
+       ${svgLines(xs[1]+26,ly+210,p.title.toUpperCase(),{max:13,f:F_UNB,w:800,s:38,dy:44})}
+       ${svgLines(xs[1]+26,ly+lh-150,p.hook,{max:19,f:F_ARQ,w:500,s:21,dy:31,fill:'rgba(248,250,252,.82)'})}</g>
+     <g id="lamina-03"><rect x="${xs[2]}" y="${ly}" width="${lw}" height="${lh}" fill="#12161E" stroke="#F8FAFC" stroke-opacity=".18" stroke-width="2"/>
+       ${svgText(xs[2]+26,ly+52,'03',{s:26,w:700,fill:p.pillar.cor,ls:8})}
+       <clipPath id="${U}-l3"><rect x="${xs[2]+16}" y="${ly+76}" width="${lw-32}" height="440"/></clipPath>
+       <rect x="${xs[2]+16}" y="${ly+76}" width="${lw-32}" height="440" fill="none" stroke="#F8FAFC" stroke-opacity=".35" stroke-width="2"/>
+       <image href="${IMG}" x="${xs[2]+16}" y="${ly+76}" width="${lw-32}" height="440" preserveAspectRatio="xMidYMid slice" clip-path="url(#${U}-l3)"/>
+       ${svgText(xs[2]+26,ly+566,'A REVELAÇÃO',{s:22,ls:6})}
+       ${stampSVG(xs[2]+lw/2,ly+lh-80,p.stamp,p.pillar.cor,-8,22)}</g>
+     <g id="fita">${(()=>{let o='';for(let x=60;x<W-60;x+=66)o+=`<rect x="${x}" y="1036" width="48" height="11" fill="${p.pillar.cor}" opacity=".85"/>`;return o})()}</g>
+     ${svgText(60,1096,'DESLIZA PARA CONTINUAR O RITUAL ⟶',{s:22,fill:'#F8FAFC',op:.72,ls:5})}
+     <circle cx="934" cy="1088" r="8" fill="#10E868"/><circle cx="966" cy="1088" r="8" fill="none" stroke="#F8FAFC" stroke-width="2"/><circle cx="998" cy="1088" r="8" fill="none" stroke="#F8FAFC" stroke-width="2"/>
+    </g>`;
+  }
+  const ys=[150,760,1370],lh2=570,lx=60,lw2=W-120;
+  return `<g id="carrossel">
+   <g id="lamina-01"><rect x="${lx}" y="${ys[0]}" width="${lw2}" height="${lh2}" fill="#12161E" stroke="#F8FAFC" stroke-opacity=".18" stroke-width="2"/>
+     <clipPath id="${U}-l1"><rect x="${lx}" y="${ys[0]}" width="${lw2}" height="${lh2}"/></clipPath>
+     <image href="${IMG}" x="${lx}" y="${ys[0]}" width="${lw2}" height="${lh2}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${U}-l1)"/>
+     <rect x="${lx}" y="${ys[0]}" width="${lw2}" height="${lh2}" fill="url(#${U}-veil)"/>
+     ${svgText(lx+30,ys[0]+58,'01',{s:28,w:700,fill:p.pillar.cor,ls:8})}
+     ${svgText(lx+30,ys[0]+lh2-40,'A SAQUETA',{s:24,ls:6})}</g>
+   <g id="lamina-02"><rect x="${lx}" y="${ys[1]}" width="${lw2}" height="${lh2}" fill="#12161E" stroke="#F8FAFC" stroke-opacity=".18" stroke-width="2"/>
+     ${svgText(lx+28,ys[1]+120,'02',{f:F_UNB,w:900,s:100,fill:'none',stroke:p.pillar.cor})}
+     ${svgLines(lx+30,ys[1]+200,p.title.toUpperCase(),{max:17,f:F_UNB,w:800,s:46,dy:54})}
+     ${svgLines(lx+30,ys[1]+lh2-120,p.hook,{max:40,f:F_ARQ,w:500,s:26,dy:38,fill:'rgba(248,250,252,.82)'})}</g>
+   <g id="lamina-03"><rect x="${lx}" y="${ys[2]}" width="${lw2}" height="${lh2-150}" fill="#12161E" stroke="#F8FAFC" stroke-opacity=".18" stroke-width="2"/>
+     ${svgText(lx+30,ys[2]+56,'03',{s:28,w:700,fill:p.pillar.cor,ls:8})}
+     ${svgText(lx+30,ys[2]+lh2-210,'A REVELAÇÃO',{s:24,ls:6})}
+     ${stampSVG(lx+lw2-150,ys[2]+lh2-330,p.stamp,p.pillar.cor,-8,24)}
+     ${svgText(60,H-160,'DESLIZA PARA CONTINUAR O RITUAL ⟶',{s:24,fill:'#F8FAFC',op:.72,ls:5})}
+     <circle cx="900" cy="${H-168}" r="9" fill="#10E868"/><circle cx="936" cy="${H-168}" r="9" fill="none" stroke="#F8FAFC" stroke-width="2"/><circle cx="972" cy="${H-168}" r="9" fill="none" stroke="#F8FAFC" stroke-width="2"/></g>
+  </g>`;
+}
+function svgA7(p,fmt,W,H,U,IMG){
+  const st=fmt==='feed';
+  const titleLines=wrapWords(p.title.toUpperCase(),st?12:14);
+  return `<g id="tipografia-explosiva">
+   <ellipse cx="${W*0.3}" cy="${H*0.2}" rx="400" ry="300" fill="${p.pillar.cor}" opacity=".12"/>
+   <ellipse cx="${W*0.7}" cy="${H*0.8}" rx="350" ry="280" fill="#F59E0B" opacity=".12"/>
+   ${svgText(-40,st?80:120,p.title.split(' ')[0].toUpperCase(),{f:F_UNB,w:900,s:st?260:300,fill:p.pillar.cor,op:.12,rot:-12})}
+   ${svgText(W-200,st?H-120:H-160,'EXME',{f:F_UNB,w:900,s:st?200:240,fill:p.pillar.cor,op:.12,rot:8})}
+   <clipPath id="${U}-img"><rect x="${W-480}" y="${H-420}" width="480" height="420"/></clipPath>
+   <image href="${IMG}" x="${W-480}" y="${H-420}" width="480" height="420" preserveAspectRatio="xMidYMid slice" clip-path="url(#${U}-img)" opacity=".2"/>
+   ${svgText(W/2,st?280:340,p.stamp,{s:st?24:28,fill:p.pillar.cor,anc:'middle',ls:8})}
+   <g id="titulo">${titleLines.map((L,i)=>svgText(W/2,(st?420:500)+i*(st?110:130),L,{f:F_UNB,w:900,s:st?110:130,anc:'middle'})).join('')}</g>
+   <rect x="${W/2-100}" y="${st?420+titleLines.length*110+40:500+titleLines.length*130+50}" width="200" height="8" fill="${p.pillar.cor}" rx="4"/>
+   ${svgLines(W/2,st?420+titleLines.length*110+100:500+titleLines.length*130+110,p.hook,{max:38,f:F_ARQ,w:500,s:st?30:36,dy:st?46:54,fill:'rgba(248,250,252,.85)',anc:'middle'})}
+  </g>`;
+}
+function svgA8(p,fmt,W,H,U,IMG){
+  const st=fmt==='feed';
+  const pols=st?[{x:40,y:60,w:320,rot:-6},{x:W-360,y:120,w:300,rot:4},{x:120,y:H-460,w:340,rot:2},{x:W-420,y:H-500,w:280,rot:-3}]
+              :[{x:40,y:80,w:360,rot:-6},{x:W-400,y:140,w:340,rot:4},{x:100,y:H-560,w:380,rot:2},{x:W-460,y:H-600,w:320,rot:-3}];
+  return `<g id="galeria-polaroids">
+   ${svgText(W/2,st?140:180,p.title.toUpperCase(),{f:F_UNB,w:900,s:st?60:72,anc:'middle'})}
+   ${svgText(W/2,st?190:240,p.serie,{s:st?20:24,fill:'#F8FAFC',op:.6,anc:'middle',ls:6})}
+   ${pols.map((pol,i)=>`
+     <g id="polaroid-${i+1}" transform="rotate(${pol.rot} ${pol.x+pol.w/2} ${pol.y+200})">
+       <rect x="${pol.x}" y="${pol.y}" width="${pol.w}" height="${pol.w*0.85+60}" fill="#F8FAFC"/>
+       <clipPath id="${U}-pol${i}"><rect x="${pol.x+16}" y="${pol.y+16}" width="${pol.w-32}" height="${pol.w*0.85}"/></clipPath>
+       <image href="${IMG}" x="${pol.x+16}" y="${pol.y+16}" width="${pol.w-32}" height="${pol.w*0.85}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${U}-pol${i})"/>
+       ${svgText(pol.x+16,pol.y+pol.w*0.85+40,[p.legFoto,p.estado,p.prov,p.arq][i],{s:st?15:18,fill:'#333'})}
+     </g>`).join('')}
+   ${svgLines(W/2,H-140,p.hook,{max:40,f:F_ARQ,w:400,s:st?24:30,dy:st?36:44,fill:'rgba(248,250,252,.8)',anc:'middle'})}
+  </g>`;
+}
+function svgA9(p,fmt,W,H,U,IMG){
+  const st=fmt==='feed';
+  const quote=wrapWords(p.hook.toUpperCase(),st?14:16);
+  return `<g id="citacao-minimalista">
+   <rect width="${W}" height="${H}" fill="url(#${U}-grad)"/>
+   <defs><linearGradient id="${U}-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0D0F12"/><stop offset="1" stop-color="#161A22"/></linearGradient></defs>
+   ${svgText(120,st?220:280,'"',{f:F_UNB,w:900,s:st?180:220,fill:p.pillar.cor,op:.15})}
+   <clipPath id="${U}-img"><rect x="0" y="${H-320}" width="420" height="320"/></clipPath>
+   <image href="${IMG}" x="0" y="${H-320}" width="420" height="320" preserveAspectRatio="xMidYMid slice" clip-path="url(#${U}-img)" opacity=".15"/>
+   <rect x="${W-140}" y="80" width="60" height="60" fill="none" stroke="${p.pillar.cor}" stroke-width="3" opacity=".4"/>
+   <rect x="80" y="${H-140}" width="60" height="60" fill="none" stroke="${p.pillar.cor}" stroke-width="3" opacity=".4"/>
+   <g id="citacao">${quote.map((L,i)=>svgText(W/2,(st?400:480)+i*(st?74:88),L,{f:F_UNB,w:900,s:st?60:72,anc:'middle'})).join('')}</g>
+   <rect x="${W/2-60}" y="${st?400+quote.length*74+40:480+quote.length*88+50}" width="120" height="4" fill="${p.pillar.cor}"/>
+   ${svgText(W/2,st?400+quote.length*74+90:480+quote.length*88+100,`${p.title.toUpperCase()} · ${p.serie}`,{s:st?20:24,fill:'#F8FAFC',op:.7,anc:'middle',ls:5})}
+  </g>`;
+}
+const ARCH_SVG={1:svgA1,2:svgA2,3:svgA3,4:svgA4,5:svgA5,6:svgA6,7:svgA7,8:svgA8,9:svgA9};
+
+async function buildSVG(p,fmt){
+  const W=1080,H=fmt==='feed'?1350:1920,U='u'+p.n+fmt[0];
+  const IMG=await ensureImgData(p);
+  const fonts=await loadFontCSS();
+  const defs=`<pattern id="${U}-grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#F8FAFC" stroke-opacity="0.05"/></pattern>
+  <filter id="${U}-grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.05 0"/></filter>
+  <linearGradient id="${U}-foil" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10E868" stop-opacity=".6"/><stop offset=".26" stop-color="#F59E0B" stop-opacity=".65"/><stop offset=".5" stop-color="#E2E8F0" stop-opacity=".5"/><stop offset=".74" stop-color="#F59E0B" stop-opacity=".65"/><stop offset="1" stop-color="#10E868" stop-opacity=".6"/></linearGradient>
+  <linearGradient id="${U}-veil" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0D0F12" stop-opacity=".6"/><stop offset=".3" stop-color="#0D0F12" stop-opacity=".08"/><stop offset=".62" stop-color="#0D0F12" stop-opacity=".08"/><stop offset="1" stop-color="#0D0F12" stop-opacity=".85"/></linearGradient>`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">\n<defs>${defs}</defs>\n<style>${fonts}</style>\n<g id="fundo"><rect width="${W}" height="${H}" fill="#0D0F12"/><rect width="${W}" height="${H}" fill="url(#${U}-grid)"/></g>\n${ARCH_SVG[p.arch](p,fmt,W,H,U,IMG)}\n${chromeSVG(p,W,H,U)}\n<g id="granulacao"><rect width="${W}" height="${H}" filter="url(#${U}-grain)"/></g>\n</svg>`;
+}
+async function rasterPNG(p,fmt,scale=2){
+  const svg=await buildSVG(p,fmt);
+  const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
+  const img=new Image();
+  await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=url});
+  const c=document.createElement('canvas');
+  c.width=1080*scale;c.height=(fmt==='feed'?1350:1920)*scale;
+  const x=c.getContext('2d');x.drawImage(img,0,0,c.width,c.height);
+  URL.revokeObjectURL(url);
+  return new Promise(res=>c.toBlob(b=>res(b),'image/png'));
+}
+function blobTxt(s){return new Blob(['\ufeff'+s],{type:'text/plain;charset=utf-8'})}
+
+/* toast de progresso */
+const toastEl=$('#toast');
+function toast(pct,label){toastEl.classList.add('on');$('#tBar').style.width=pct+'%';$('#tLabel').textContent=label}
+function hideToast(){toastEl.classList.remove('on')}
+
+/* exports individuais */
+async function exportPNG(p,fmt){
+  try{toast(30,`A RENDERIZAR ${p.serial} · PNG 2X`);
+    const b=await rasterPNG(p,fmt);
+    saveAs(b,`${p.serial}_${slug(p.title)}_${fmt}_2x.png`);
+    toast(100,'PNG 2X EXPORTADO ✓');setTimeout(hideToast,1800);
+  }catch(e){toast(100,'ERRO NA EXPORTAÇÃO');setTimeout(hideToast,2500)}
+}
+async function exportSVG(p,fmt){
+  try{toast(30,`A ESTRUTURAR ${p.serial} · SVG`);
+    const s=await buildSVG(p,fmt);
+    saveAs(new Blob([s],{type:'image/svg+xml;charset=utf-8'}),`${p.serial}_${slug(p.title)}_${fmt}.svg`);
+    toast(100,'SVG EDITÁVEL EXPORTADO ✓');setTimeout(hideToast,1800);
+  }catch(e){toast(100,'ERRO NA EXPORTAÇÃO');setTimeout(hideToast,2500)}
+}
+
+/* ════════════════════════════════════════════════════════
+   9 · EMPACOTAMENTO ZIP
+   ════════════════════════════════════════════════════════ */
+async function addPostToZip(zip,folder,p,i,total){
+  toast(Math.round((i/total)*88),`A EMPACOTAR ${p.serial} (${i}/${total})`);
+  const f=zip.folder(folder);
+  const [feedPng,storyPng,feedSvg,storySvg]=await Promise.all([
+    rasterPNG(p,'feed'),rasterPNG(p,'story'),buildSVG(p,'feed'),buildSVG(p,'story')]);
+  f.file('feed_1080x1350_2x.png',feedPng);
+  f.file('story_1080x1920_2x.png',storyPng);
+  f.file('feed.svg',feedSvg);
+  f.file('story.svg',storySvg);
+  f.file('legenda.txt',blobTxt(p.legenda));
+  f.file('image_prompt.txt',blobTxt(p.prompt('FEED 4:5')+'\n\n'+p.prompt('STORY 9:16')));
+}
+async function finalizeZip(zip,name){
+  toast(92,'A SELAR A GAVETA…');
+  const b=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}},
+    m=>toast(92+Math.round(m.percent*0.08),'A COMPRIMIR '+Math.round(m.percent)+'%'));
+  saveAs(b,name);toast(100,'GAVETA SELADA ✓ '+name);setTimeout(hideToast,2200);
+}
+async function zipPost(p){
+  const zip=new JSZip();
+  await addPostToZip(zip,`${p.serial}_${slug(p.title)}`,p,1,1);
+  await finalizeZip(zip,`EXME_${p.serial}_${slug(p.title)}.zip`);
+}
+async function zipPillar(P){
+  const zip=new JSZip();
+  const list=POSTS.filter(p=>p.pillar.id===P.id);
+  for(let i=0;i<list.length;i++)await addPostToZip(zip,`PILAR_${P.curto}/${list[i].serial}_${slug(list[i].title)}`,list[i],i+1,list.length);
+  zip.file('LEIA-ME.txt',blobTxt(`EXME — PILAR ${P.curto} (${P.nome})\n${list.length} peças · ${P.pct} da matriz\nCada pasta: feed + story em PNG 2x e SVG editável, legenda.txt e image_prompt.txt`));
+  await finalizeZip(zip,`EXME_PILAR_${P.curto}_${list.length}pecas.zip`);
+}
+async function zipMaster(){
+  const zip=new JSZip();
+  for(let i=0;i<POSTS.length;i++){
+    const p=POSTS[i];
+    await addPostToZip(zip,`${pad(p.pillar===PILLARS[0]?1:PILLARS.indexOf(p.pillar)+1)}_${p.pillar.curto}/${p.serial}_${slug(p.title)}`,p,i+1,POSTS.length);
+  }
+  const matriz=['PILAR;PCT;PECAS;ARQUETIPOS',
+    ...PILLARS.map((P,i)=>`${P.nome};${P.pct};${SEEDS[P.id].length};${P.archC.map(a=>'A'+a).join(' · ')}`)].join('\n');
+  zip.file('MATRIZ_ESTRATEGICA.csv',blobTxt(matriz));
+  zip.file('LEIA-ME.txt',blobTxt(`EXME® — CASA DO COLECIONADOR MODERNO\nARQUIVO COMPLETO · 90 PEÇAS PARA INSTAGRAM\n\nESTRUTURA\n01_NOSTALGIA · 26 peças\n02_HUMOR · 18 peças\n03_COMUNIDADE · 18 peças (+carrosséis)\n04_RITUAL · 14 peças (+carrosséis)\n05_CULTURA · 9 peças\n06_PHYGITAL · 5 peças\n\nCADA PASTA CONTÉM\nfeed_1080x1350_2x.png · story_1080x1920_2x.png\nfeed.svg · story.svg (nós editáveis, Adobe Illustrator)\nlegenda.txt (copy PT-PT: gancho + narrativa + CTA + hashtags)\nimage_prompt.txt (prompt cinematográfico EN para Midjourney v6 / Flux.1)\n\nexme.club · tu és colecionador`));
+  await finalizeZip(zip,'EXME_ARQUIVO_COMPLETO_90_PECAS.zip');
+}
+
+/* menu da gaveta ZIP */
+(function dd(){
+  const menu=$('#ddMenu');
+  menu.innerHTML=PILLARS.map((P,i)=>`<button data-zp="${P.id}"><span>GAVETA ${pad(i+1)} · ${P.curto}</span><b>${SEEDS[P.id].length} PEÇAS</b></button>`).join('')
+   +`<button data-zm="1"><span>ARQUIVO MASTER · TUDO</span><b>90 PEÇAS + README</b></button>`;
+  $('#btnDd').addEventListener('click',e=>{e.stopPropagation();$('#ddZip').classList.toggle('open')});
+  document.addEventListener('click',()=>$('#ddZip').classList.remove('open'));
+  menu.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+    $('#ddZip').classList.remove('open');
+    if(b.dataset.zm)zipMaster();else zipPillar(PILLARS.find(P=>P.id===b.dataset.zp))});
+})();
+
+/* ════════════════════════════════════════════════════════
+   10 · ARRANQUE
+   ════════════════════════════════════════════════════════ */
+
+/* Navegação de slides no modal */
+(function(){
+  const stage=$('#mStage');
+  document.addEventListener('click',e=>{
+    if(!modalPost||!modalPost.carousel)return;
+    if(e.target.id==='mNext'||e.target.id==='mPrev'){
+      const cur=+(stage.dataset.current||0);
+      const total=+(stage.dataset.slides||1);
+      const delta=e.target.id==='mNext'?1:-1;
+      const next=(cur+delta+total)%total;
+      stage.dataset.current=next;
+      stage.innerHTML=slideHTML(modalPost,next);
+      $('#mPos').textContent=`SLIDE ${next+1} / ${total}`;
+    }
+  });
+})();
+
+grid.addEventListener('click',onGridClick);
+renderGrid();
+if(window.lucide)lucide.createIcons();
+</script>
+</body>
+</html>
