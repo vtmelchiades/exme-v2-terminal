@@ -1125,7 +1125,7 @@ function fallbackArt(p){
   return c.toDataURL('image/png');
 }
 async function ensureImgData(p){
-  const src=p.custom||p.img;
+  const src=p.custom||IMG_MAP[p.n]||p.img;
   if(p.custom)return p.custom;
   if(imgCache.has(src))return imgCache.get(src);
   try{
