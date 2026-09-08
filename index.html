@@ -11,6 +11,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.1/build/mp4-muxer.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
 :root{
@@ -1142,7 +1143,7 @@ async function loadFontCSS(){
   if(FONT_CSS!==null)return FONT_CSS;FONT_CSS='';
   try{
     const css=await fetch('https://fonts.googleapis.com/css2?family=Unbounded:wght@700;900&family=Space+Mono:wght@400;700&family=Archivo:wght@500;600;800&display=swap').then(r=>r.text());
-    const blocks=css.split('@font-face{').slice(1).map(b=>'@font-face{'+b.split('}')[0]+'}');
+    const blocks=css.match(/@font-face\s*\{[^}]*\}/g)||[];   /* o css2 devolve "@font-face {" com espaço */
     const latin=blocks.filter(b=>/U\+0000-00FF/.test(b));
     const done=await Promise.all(latin.map(async b=>{
       const m=b.match(/url\((https:[^)]+?)\)/);if(!m)return null;
@@ -1190,7 +1191,7 @@ function stampSVG(cx,cy,txt,col,rot=-8,s=30){
    <rect x="${cx-w/2}" y="${cy-34}" width="${w}" height="68" fill="rgba(13,15,18,.55)" stroke="${col}" stroke-width="4" stroke-dasharray="10 8"/>
    ${svgText(cx,cy+11,txt,{s,w:700,fill:col,anc:'middle',ls:7})}</g>`;
 }
-function svgA1(p,fmt,W,H,U,IMG){
+function svgA1(p,fmt,W,H,U,IMG,noAnim){
   const st=fmt==='feed';
   const fx=st?190:150,fy=st?168:200,fw=st?700:780,fh=st?620:960;
   const titleY=st?900:1290,hookY=titleY+(wrapWords(p.title.toUpperCase(),14).length)*72+46;
@@ -1199,15 +1200,15 @@ function svgA1(p,fmt,W,H,U,IMG){
    <rect x="${fx}" y="${fy}" width="${fw}" height="${fh}" rx="36" fill="#161A22" stroke="#E2E8F0" stroke-width="7"/>
    <clipPath id="${U}-card"><rect x="${fx+18}" y="${fy+18}" width="${fw-36}" height="${fh-92}" rx="22"/></clipPath>
    <image href="${IMG}" x="${fx+18}" y="${fy+18}" width="${fw-36}" height="${fh-92}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${U}-card)"/>
-   <rect x="${fx+18}" y="${fy+18}" width="${fw-36}" height="${fh-92}" rx="22" fill="url(#${U}-foil)" opacity=".45"/>
+   ${noAnim?'':`<rect x="${fx+18}" y="${fy+18}" width="${fw-36}" height="${fh-92}" rx="22" fill="url(#${U}-foil)" opacity=".45"/>`}
    <rect x="${fx+18}" y="${fy+fh-74}" width="${fw-36}" height="56" fill="#0D0F12" opacity=".85"/>
    ${svgText(W/2,fy+fh-38,`${p.title.toUpperCase()} · CROMO Nº ${p.cromo}`,{s:21,fill:p.pillar.cor,anc:'middle',ls:4})}
    ${stampSVG(fx+fw-40,fy+70,p.stamp,p.pillar.cor,-8,28)}
    <g id="tipografia">${svgLines(W/2,titleY,p.title.toUpperCase(),{max:14,f:F_UNB,w:900,s:st?70:82,dy:st?72:84,anc:'middle'})}
    ${svgLines(W/2,hookY,p.hook,{max:44,f:F_ARQ,w:500,s:st?25:29,dy:st?38:44,fill:'rgba(248,250,252,.78)',anc:'middle'})}</g>
-   ${svgText(200,H-140,`ESTADO: ${p.estado}`,{s:20,fill:'#F8FAFC',op:.55,ls:2})}
-   ${svgText(W/2,H-140,p.serie,{s:20,fill:'#F8FAFC',op:.55,anc:'middle',ls:2})}
-   ${svgText(W-200,H-140,`GAVETA ${p.gaveta}`,{s:20,fill:'#F8FAFC',op:.55,anc:'end',ls:2})}
+   ${svgText(110,H-140,`ESTADO: ${p.estado}`,{s:18,fill:'#F8FAFC',op:.55,ls:1})}
+   ${svgText(W/2,H-140,p.serie,{s:18,fill:'#F8FAFC',op:.55,anc:'middle',ls:1})}
+   ${svgText(W-110,H-140,`GAVETA ${p.gaveta}`,{s:18,fill:'#F8FAFC',op:.55,anc:'end',ls:1})}
   </g>`;
 }
 function svgA2(p,fmt,W,H,U,IMG){
@@ -1241,7 +1242,7 @@ function svgA2(p,fmt,W,H,U,IMG){
    ${svgText(126,H-150,`nota de rodapé — ${p.nota}`,{s:19,fill:'#F8FAFC',op:.55})}
   </g>`;
 }
-function svgA3(p,fmt,W,H,U,IMG){
+function svgA3(p,fmt,W,H,U,IMG,noAnim){
   const st=fmt==='feed';
   const wy=140,wh=st?830:1030;
   const marq=`+++ TROCAS ABERTAS +++ ${p.title.toUpperCase()} +++ RESPONDE COM O TEU REPETIDO +++`;
@@ -1266,9 +1267,9 @@ function svgA3(p,fmt,W,H,U,IMG){
    ${svgText(st?470:540,wy+(st?456:506),'RES: 640×480',{s:20,fill:'#F8FAFC',op:.6})}
    ${svgText(st?470:540,wy+(st?492:542),'24 KB · MODEM 56K',{s:20,fill:'#F8FAFC',op:.6})}
    <rect x="108" y="${wy+wh-116}" width="${W-216}" height="52" fill="none" stroke="#10E868" stroke-width="2" stroke-dasharray="8 6"/>
-   ${svgText(126,wy+wh-82,marq.slice(0,52)+'…',{s:21,fill:'#10E868',ls:3})}
+   ${noAnim?'':svgText(126,wy+wh-82,marq.slice(0,52)+'…',{s:21,fill:'#10E868',ls:3})}
    <g id="titulo-fora">${svgLines(76,wy+wh+96,p.title.toUpperCase(),{max:13,f:F_UNB,w:900,s:st?70:82,dy:st?72:84})}</g>
-   ${svgText(76,H-140,`LIGADO AO ARQUIVO DESDE ${p.ano} · █`,{s:22,fill:'#F8FAFC',op:.6,ls:3})}
+   ${svgText(76,H-140,`LIGADO AO ARQUIVO DESDE ${p.ano} · ${noAnim?'':'█'}`,{s:22,fill:'#F8FAFC',op:.6,ls:3})}
   </g>`;
 }
 function svgA4(p,fmt,W,H,U,IMG){
@@ -1411,18 +1412,81 @@ function svgA9(p,fmt,W,H,U,IMG){
 }
 const ARCH_SVG={1:svgA1,2:svgA2,3:svgA3,4:svgA4,5:svgA5,6:svgA6,7:svgA7,8:svgA8,9:svgA9};
 
-async function buildSVG(p,fmt){
-  const W=1080,H=fmt==='feed'?1350:1920,U='u'+p.n+fmt[0];
+/* —— construtores SVG dos 5 slides do carrossel (espelham slideHTML) —— */
+const SLIDE_COUNT=5;
+const SLIDE_NOMES=['capa','citacao','dados','chamada','assinatura'];
+function svgSlide(p,fmt,idx,W,H,U,IMG){
+  const acc=p.pillar.cor,st=fmt==='feed',k=st?1:1.12;
+  const S=n=>Math.round(n*k);
+  if(idx===1){
+    const q=wrapWords(p.hook.toUpperCase(),st?14:13),qs=S(64),qdy=Math.round(qs*1.15);
+    const top=(H-(q.length*qdy+50+22))/2;
+    return `<g id="slide-citacao">
+     <clipPath id="${U}-sl"><rect width="${W}" height="${H}"/></clipPath>
+     <image href="${IMG}" width="${W}" height="${H}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${U}-sl)" opacity=".3"/>
+     <g id="citacao">${q.map((L,i)=>i===q.length-1
+       ? `<text x="120" y="${top+qs*.78+i*qdy}" font-family="${F_UNB}" font-weight="900" font-size="${qs}" fill="#F8FAFC">${esc(L)}<tspan fill="${acc}">.</tspan></text>`
+       : svgText(120,top+qs*.78+i*qdy,L,{f:F_UNB,w:900,s:qs})).join('')}</g>
+     ${svgText(120,top+q.length*qdy+50+17,p.title.toUpperCase(),{s:22,fill:'rgba(248,250,252,.7)',ls:5.5})}
+    </g>`;
+  }
+  if(idx===2){
+    const cel=[['ESTADO',p.estado],['ANO',String(p.ano)],['GAVETA',p.gaveta],['CROMO','Nº '+p.cromo]];
+    const gw=800,cw=(gw-80)/2,x0=(W-gw)/2,rh=54,gap=40;
+    const total=20+60+2*rh+gap,top=(H-total)/2;
+    return `<g id="slide-dados">
+     ${svgText(W/2,top+16,'DADOS DO ARQUIVO',{s:20,fill:acc,anc:'middle',ls:6})}
+     ${cel.map((c,i)=>{const col=i%2,row=(i/2)|0,x=x0+col*(cw+80),y=top+60+row*(rh+gap);
+       return `${svgText(x,y+14,c[0],{s:18,fill:'rgba(248,250,252,.5)',ls:3.6})}
+       ${svgText(x,y+52,c[1],{s:28,w:700,fill:'#F8FAFC'})}`}).join('')}
+    </g>`;
+  }
+  if(idx===3){
+    const c=wrapWords(p.cta.toUpperCase(),st?22:20),cs=S(48),cdy=Math.round(cs*1.2);
+    const total=c.length*cdy+50+4+50+20,top=(H-total)/2;
+    return `<g id="slide-chamada">
+     <g id="chamada">${c.map((L,i)=>svgText(W/2,top+cs*.78+i*cdy,L,{f:F_UNB,w:900,s:cs,anc:'middle'})).join('')}</g>
+     <rect x="${W/2-60}" y="${top+c.length*cdy+48}" width="120" height="4" fill="${acc}"/>
+     ${svgText(W/2,top+c.length*cdy+50+4+50+16,'EXME.CLUB',{s:20,fill:'rgba(248,250,252,.6)',anc:'middle',ls:6})}
+    </g>`;
+  }
+  if(idx===4){
+    const tg=wrapWords(p.tags,50),ts=28,tdy=Math.round(ts*1.6),ms=S(140);
+    const total=ms+40+22+40+tg.length*tdy,top=(H-total)/2;
+    return `<g id="slide-assinatura">
+     ${svgText(W/2,top+ms*.78,'EXME',{f:F_UNB,w:900,s:ms,fill:acc,op:.3,anc:'middle'})}
+     ${svgText(W/2,top+ms+40+17,'CASA DO COLECIONADOR',{s:22,fill:'rgba(248,250,252,.7)',anc:'middle',ls:8.8})}
+     ${tg.map((L,i)=>svgText(W/2,top+ms+40+22+40+22+i*tdy,L,{f:F_ARQ,w:500,s:ts,fill:'rgba(248,250,252,.6)',anc:'middle'})).join('')}
+    </g>`;
+  }
+  const tl=wrapWords(p.title.toUpperCase(),st?12:10),tsz=S(90),tdy=Math.round(tsz*.9);
+  const hl=wrapWords(p.hook,42),hs=S(32),hdy=Math.round(hs*1.5);
+  const total=22+40+tl.length*tdy+50+8+50+hl.length*hdy,top=(H-total)/2;
+  return `<g id="slide-capa">
+   ${svgText(W/2,top+17,p.stamp,{s:22,fill:acc,anc:'middle',ls:8.8})}
+   <g id="titulo">${tl.map((L,i)=>svgText(W/2,top+22+40+tsz*.78+i*tdy,L,{f:F_UNB,w:900,s:tsz,anc:'middle'})).join('')}</g>
+   <rect x="${W/2-100}" y="${top+22+40+tl.length*tdy+50}" width="200" height="8" rx="4" fill="${acc}"/>
+   ${hl.map((L,i)=>svgText(W/2,top+22+40+tl.length*tdy+50+8+50+hs*.78+i*hdy,L,{f:F_ARQ,w:500,s:hs,fill:'rgba(248,250,252,.85)',anc:'middle'})).join('')}
+  </g>`;
+}
+
+async function buildSVG(p,fmt,opts={}){
+  const W=1080,H=fmt==='feed'?1350:1920;
+  const sl=opts.slide;
+  const U='u'+p.n+fmt[0]+(sl!=null?'s'+sl:'')+(opts.noAnim?'v':'');
   const IMG=await ensureImgData(p);
   const fonts=await loadFontCSS();
   const defs=`<pattern id="${U}-grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#F8FAFC" stroke-opacity="0.05"/></pattern>
   <filter id="${U}-grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.05 0"/></filter>
   <linearGradient id="${U}-foil" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10E868" stop-opacity=".6"/><stop offset=".26" stop-color="#F59E0B" stop-opacity=".65"/><stop offset=".5" stop-color="#E2E8F0" stop-opacity=".5"/><stop offset=".74" stop-color="#F59E0B" stop-opacity=".65"/><stop offset="1" stop-color="#10E868" stop-opacity=".6"/></linearGradient>
   <linearGradient id="${U}-veil" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0D0F12" stop-opacity=".6"/><stop offset=".3" stop-color="#0D0F12" stop-opacity=".08"/><stop offset=".62" stop-color="#0D0F12" stop-opacity=".08"/><stop offset="1" stop-color="#0D0F12" stop-opacity=".85"/></linearGradient>`;
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">\n<defs>${defs}</defs>\n<style>${fonts}</style>\n<g id="fundo"><rect width="${W}" height="${H}" fill="#0D0F12"/><rect width="${W}" height="${H}" fill="url(#${U}-grid)"/></g>\n${ARCH_SVG[p.arch](p,fmt,W,H,U,IMG)}\n${chromeSVG(p,W,H,U)}\n<g id="granulacao"><rect width="${W}" height="${H}" filter="url(#${U}-grain)"/></g>\n</svg>`;
+  const corpo=sl!=null
+    ? svgSlide(p,fmt,sl,W,H,U,IMG)
+    : ARCH_SVG[p.arch](p,fmt,W,H,U,IMG,opts.noAnim)+'\n'+chromeSVG(p,W,H,U);
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">\n<defs>${defs}</defs>\n<style>${fonts}</style>\n<g id="fundo"><rect width="${W}" height="${H}" fill="#0D0F12"/><rect width="${W}" height="${H}" fill="url(#${U}-grid)"/></g>\n${corpo}\n<g id="granulacao"><rect width="${W}" height="${H}" filter="url(#${U}-grain)"/></g>\n</svg>`;
 }
-async function rasterPNG(p,fmt,scale=2){
-  const svg=await buildSVG(p,fmt);
+async function rasterPNG(p,fmt,scale=2,opts={}){
+  const svg=await buildSVG(p,fmt,opts);
   const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
   const img=new Image();
   await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=url});
@@ -1433,6 +1497,155 @@ async function rasterPNG(p,fmt,scale=2){
   return new Promise(res=>c.toBlob(b=>res(b),'image/png'));
 }
 function blobTxt(s){return new Blob(['\ufeff'+s],{type:'text/plain;charset=utf-8'})}
+
+/* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+   8B \u00b7 V\u00cdDEO \u2014 loop MP4 fiel \u00e0 anima\u00e7\u00e3o do ecr\u00e3
+   Carrossel  \u2192 slideshow das 5 l\u00e2minas com fus\u00e3o circular
+   Arqu\u00e9tipo 1 \u2192 holografia (foil 115\u00b0 + brilho 105\u00b0)
+   Arqu\u00e9tipo 3 \u2192 marquise do terminal + cursor a piscar
+   Cada loop fecha exatamente onde abre: repete sem salto.
+   \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 */
+const VID_FPS=25,VID_DUR=4,CAR_SLOT=2,CAR_FADE=.4;
+function animKind(p){return p.carousel?'carrossel':p.arch===1?'foil':p.arch===3?'terminal':null}
+function mp4Ready(){return typeof VideoEncoder!=='undefined'&&typeof VideoFrame!=='undefined'&&!!window.Mp4Muxer}
+
+async function rasterCanvas(p,fmt,opts={}){
+  const W=1080,H=fmt==='feed'?1350:1920;
+  const svg=await buildSVG(p,fmt,opts);
+  const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
+  try{
+    const img=new Image();
+    await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=url});
+    const c=document.createElement('canvas');c.width=W;c.height=H;
+    c.getContext('2d').drawImage(img,0,0,W,H);
+    return c;
+  }finally{URL.revokeObjectURL(url)}
+}
+function roundRectPath(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  if(ctx.roundRect)return ctx.roundRect(x,y,w,h,r);
+  ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();
+}
+/* mesma geometria do svgA1 \u2014 a moldura do cromo */
+function a1Rect(fmt){const st=fmt==='feed',fx=st?190:150,fy=st?168:200,fw=st?700:780,fh=st?620:960;
+  return {x:fx+18,y:fy+18,w:fw-36,h:fh-92,r:22}}
+/* mesma geometria do svgA3 \u2014 marquise e linha de estado */
+function a3Geo(fmt){const st=fmt==='feed',wy=140,wh=st?830:1030,H=st?1350:1920;
+  return {bx:108,by:wy+wh-116,bw:1080-216,bh:52,ty:wy+wh-82,sx:76,sy:H-140}}
+
+/* faixa peri\u00f3dica num \u00e2ngulo CSS \u2014 o padr\u00e3o desliza um per\u00edodo por loop */
+function drawTiled(ctx,rect,angDeg,period,phase,stops){
+  const rad=(angDeg-90)*Math.PI/180;
+  const cx=rect.x+rect.w/2,cy=rect.y+rect.h/2,D=Math.hypot(rect.w,rect.h)/2+period;
+  const n=Math.ceil(2*D/period)+2,x0=phase*period-period*Math.ceil((D+period)/period);
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(rad);
+  const g=ctx.createLinearGradient(x0,0,x0+n*period,0);
+  for(let i=0;i<n;i++)for(const s of stops)g.addColorStop((i+s[0])/n,s[1]);
+  ctx.fillStyle=g;ctx.fillRect(-D,-D,2*D,2*D);ctx.restore();
+}
+const FOIL_STOPS=[[0,'rgba(16,232,104,.6)'],[.26,'rgba(245,158,11,.65)'],[.5,'rgba(226,232,240,.5)'],
+                  [.74,'rgba(245,158,11,.65)'],[1,'rgba(16,232,104,.6)']];
+function drawFoil(ctx,fmt,phase){
+  const r=a1Rect(fmt),a=115*Math.PI/180;
+  const L=Math.abs(r.w*Math.sin(a))+Math.abs(r.h*Math.cos(a));
+  ctx.save();roundRectPath(ctx,r.x,r.y,r.w,r.h,r.r);ctx.clip();
+  ctx.globalCompositeOperation='overlay';ctx.globalAlpha=.9;
+  drawTiled(ctx,r,115,L*3,phase,FOIL_STOPS);
+  ctx.restore();
+}
+function drawSheen(ctx,fmt,phase){
+  const r=a1Rect(fmt),ang=105,rad=(ang-90)*Math.PI/180,EL=2.2;
+  const a=ang*Math.PI/180;
+  const L=(Math.abs(r.w*Math.sin(a))+Math.abs(r.h*Math.cos(a)))*EL;
+  const off=(phase*2-1)*.46*r.w*EL*Math.cos(rad);
+  const D=Math.hypot(r.w,r.h);
+  ctx.save();roundRectPath(ctx,r.x,r.y,r.w,r.h,r.r);ctx.clip();
+  ctx.translate(r.x+r.w/2,r.y+r.h/2);ctx.rotate(rad);
+  const g=ctx.createLinearGradient(off-L/2,0,off+L/2,0);
+  g.addColorStop(0,'rgba(248,250,252,0)');g.addColorStop(.43,'rgba(248,250,252,0)');
+  g.addColorStop(.5,'rgba(248,250,252,.55)');
+  g.addColorStop(.57,'rgba(248,250,252,0)');g.addColorStop(1,'rgba(248,250,252,0)');
+  ctx.fillStyle=g;ctx.fillRect(-D,-D,2*D,2*D);ctx.restore();
+}
+function monoFont(ctx,size,ls){ctx.font=`400 ${size}px 'Space Mono','Courier New',monospace`;
+  try{ctx.letterSpacing=ls+'px'}catch(e){}}
+function drawMarquee(ctx,p,fmt,phase){
+  const g=a3Geo(fmt);
+  const marq=`+++ TROCAS ABERTAS +++ ${p.title.toUpperCase()} +++ RESPONDE COM O TEU REPETIDO +++    `;
+  ctx.save();ctx.beginPath();ctx.rect(g.bx+8,g.by,g.bw-16,g.bh);ctx.clip();
+  monoFont(ctx,21,3);ctx.fillStyle='#10E868';
+  const w=ctx.measureText(marq).width||600,x0=g.bx+18-phase*w;
+  for(let k=0;k<=Math.ceil(g.bw/w)+1;k++)ctx.fillText(marq,x0+k*w,g.ty);
+  ctx.restore();
+}
+function drawCursor(ctx,p,fmt,phase){
+  if(((phase*VID_DUR)%1)>=.5)return;            /* blink 1s steps(1) */
+  const g=a3Geo(fmt);
+  ctx.save();monoFont(ctx,22,3);
+  const pre=`LIGADO AO ARQUIVO DESDE ${p.ano} \u00b7 `;
+  ctx.globalAlpha=.6;ctx.fillStyle='#F8FAFC';
+  ctx.fillText('\u2588',g.sx+ctx.measureText(pre).width,g.sy);
+  ctx.restore();
+}
+
+async function encodeMP4({W,H,fps,frames,draw,onProgress}){
+  if(!mp4Ready())return null;
+  let codec=null;
+  for(const c of ['avc1.42E028','avc1.4D0028','avc1.640028','avc1.42001f']){
+    try{const s=await VideoEncoder.isConfigSupported({codec:c,width:W,height:H,bitrate:8e6,framerate:fps});
+      if(s&&s.supported){codec=c;break}}catch(e){}
+  }
+  if(!codec)return null;
+  const muxer=new Mp4Muxer.Muxer({target:new Mp4Muxer.ArrayBufferTarget(),
+    video:{codec:'avc',width:W,height:H,frameRate:fps},fastStart:'in-memory'});
+  let falhou=null;
+  const enc=new VideoEncoder({output:(c,m)=>muxer.addVideoChunk(c,m),error:e=>{falhou=e}});
+  enc.configure({codec,width:W,height:H,bitrate:8e6,framerate:fps});
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  const ctx=cv.getContext('2d',{alpha:false});
+  for(let i=0;i<frames&&!falhou;i++){
+    ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
+    ctx.fillStyle='#0D0F12';ctx.fillRect(0,0,W,H);
+    draw(ctx,i/frames,i);
+    const vf=new VideoFrame(cv,{timestamp:Math.round(i*1e6/fps),duration:Math.round(1e6/fps)});
+    enc.encode(vf,{keyFrame:i%(fps*2)===0});vf.close();
+    if(i%10===0){
+      if(onProgress)onProgress(i/frames);
+      while(enc.encodeQueueSize>24)await new Promise(r=>setTimeout(r,6));
+      await new Promise(r=>setTimeout(r,0));
+    }
+  }
+  if(falhou){try{enc.close()}catch(e){}throw falhou}
+  await enc.flush();enc.close();muxer.finalize();
+  return new Blob([muxer.target.buffer],{type:'video/mp4'});
+}
+
+async function renderLoopMP4(p,fmt,onProgress){
+  const kind=animKind(p);
+  if(!kind||!mp4Ready())return null;
+  const W=1080,H=fmt==='feed'?1350:1920;
+  if(document.fonts&&document.fonts.ready)await document.fonts.ready;
+  if(kind==='carrossel'){
+    const cans=[];
+    for(let s=0;s<SLIDE_COUNT;s++)cans.push(await rasterCanvas(p,fmt,{slide:s}));
+    const total=CAR_SLOT*SLIDE_COUNT;
+    return encodeMP4({W,H,fps:VID_FPS,frames:Math.round(total*VID_FPS),onProgress,
+      draw:(ctx,ph)=>{
+        const t=ph*total,idx=Math.min(SLIDE_COUNT-1,Math.floor(t/CAR_SLOT)),loc=t-idx*CAR_SLOT;
+        const prev=(idx-1+SLIDE_COUNT)%SLIDE_COUNT;
+        ctx.drawImage(loc<CAR_FADE?cans[prev]:cans[idx],0,0);
+        if(loc<CAR_FADE){ctx.globalAlpha=loc/CAR_FADE;ctx.drawImage(cans[idx],0,0);ctx.globalAlpha=1}
+      }});
+  }
+  const base=await rasterCanvas(p,fmt,{noAnim:true});
+  return encodeMP4({W,H,fps:VID_FPS,frames:VID_DUR*VID_FPS,onProgress,
+    draw:(ctx,ph)=>{
+      ctx.drawImage(base,0,0);
+      if(kind==='foil'){drawFoil(ctx,fmt,ph);drawSheen(ctx,fmt,ph)}
+      else{drawMarquee(ctx,p,fmt,ph);drawCursor(ctx,p,fmt,ph)}
+    }});
+}
 
 /* toast de progresso */
 const toastEl=$('#toast');
@@ -1458,8 +1671,9 @@ async function exportSVG(p,fmt){
 /* ════════════════════════════════════════════════════════
    9 · EMPACOTAMENTO ZIP
    ════════════════════════════════════════════════════════ */
-async function addPostToZip(zip,folder,p,i,total){
-  toast(Math.round((i/total)*88),`A EMPACOTAR ${p.serial} (${i}/${total})`);
+async function addPostToZip(zip,folder,p,i,total,opts={}){
+  const base=Math.round((i/total)*88);
+  toast(base,`A EMPACOTAR ${p.serial} (${i}/${total})`);
   const f=zip.folder(folder);
   const [feedPng,storyPng,feedSvg,storySvg]=await Promise.all([
     rasterPNG(p,'feed'),rasterPNG(p,'story'),buildSVG(p,'feed'),buildSVG(p,'story')]);
@@ -1469,6 +1683,43 @@ async function addPostToZip(zip,folder,p,i,total){
   f.file('story.svg',storySvg);
   f.file('legenda.txt',blobTxt(p.legenda));
   f.file('image_prompt.txt',blobTxt(p.prompt('FEED 4:5')+'\n\n'+p.prompt('STORY 9:16')));
+
+  /* carrossel: as 5 lâminas, cada uma em feed e story */
+  if(p.carousel){
+    const cf=f.folder('carrossel');
+    for(let s=0;s<SLIDE_COUNT;s++){
+      toast(base,`${p.serial} · LÂMINA ${s+1}/${SLIDE_COUNT}`);
+      const [sfp,sfs,ssp,sss]=await Promise.all([
+        rasterPNG(p,'feed',1,{slide:s}),buildSVG(p,'feed',{slide:s}),
+        rasterPNG(p,'story',1,{slide:s}),buildSVG(p,'story',{slide:s})]);
+      const nm=`${pad(s+1)}_${SLIDE_NOMES[s]}`;
+      cf.file(`${nm}_feed_1080x1350.png`,sfp);
+      cf.file(`${nm}_feed.svg`,sfs);
+      cf.file(`${nm}_story_1080x1920.png`,ssp);
+      cf.file(`${nm}_story.svg`,sss);
+    }
+    cf.file('ORDEM.txt',blobTxt(`EXME — CARROSSEL ${p.serial}\n${SLIDE_COUNT} lâminas, por ordem de publicação:\n\n`+
+      SLIDE_NOMES.map((n,s)=>`${pad(s+1)} · ${n.toUpperCase()}`).join('\n')+
+      `\n\nPublica na ordem numérica. A legenda do carrossel é a legenda.txt da pasta acima.\n\n`+
+      `Os PNG das lâminas saem no tamanho nativo de publicação (1080×1350 feed, 1080×1920 story).\n`+
+      `Para impressão ou edição, usa os SVG — são vetoriais e abrem no Illustrator.`));
+  }
+
+  /* loop animado em MP4 */
+  const kind=animKind(p);
+  if(kind){
+    if(!mp4Ready()){
+      f.file('SEM_MP4.txt',blobTxt('O loop MP4 não foi gerado: este navegador não suporta WebCodecs.\n'+
+        'Abre o estúdio em Chrome, Edge ou Safari 17+ e volta a exportar o ZIP.'));
+    }else{
+      for(const fm of (opts.mp4Formats||['feed','story'])){
+        try{
+          const mp4=await renderLoopMP4(p,fm,pr=>toast(base,`${p.serial} · MP4 ${fm.toUpperCase()} ${Math.round(pr*100)}%`));
+          if(mp4)f.file(`animacao_loop_${fm}.mp4`,mp4);
+        }catch(e){console.error('MP4',p.serial,fm,e)}
+      }
+    }
+  }
 }
 async function finalizeZip(zip,name){
   toast(92,'A SELAR A GAVETA…');
@@ -1484,20 +1735,24 @@ async function zipPost(p){
 async function zipPillar(P){
   const zip=new JSZip();
   const list=POSTS.filter(p=>p.pillar.id===P.id);
-  for(let i=0;i<list.length;i++)await addPostToZip(zip,`PILAR_${P.curto}/${list[i].serial}_${slug(list[i].title)}`,list[i],i+1,list.length);
-  zip.file('LEIA-ME.txt',blobTxt(`EXME — PILAR ${P.curto} (${P.nome})\n${list.length} peças · ${P.pct} da matriz\nCada pasta: feed + story em PNG 2x e SVG editável, legenda.txt e image_prompt.txt`));
+  for(let i=0;i<list.length;i++)await addPostToZip(zip,`PILAR_${P.curto}/${list[i].serial}_${slug(list[i].title)}`,list[i],i+1,list.length,{mp4Formats:['feed']});
+  zip.file('LEIA-ME.txt',blobTxt(`EXME — PILAR ${P.curto} (${P.nome})\n${list.length} peças · ${P.pct} da matriz\n`+
+    `Cada pasta: feed + story em PNG 2x e SVG editável, legenda.txt e image_prompt.txt\n`+
+    `Peças de carrossel trazem a subpasta carrossel/ com as 5 lâminas numeradas.\n`+
+    `Peças animadas trazem animacao_loop_feed.mp4 (loop perfeito).\n`+
+    `Para o MP4 em story, exporta o ZIP da peça individual.`));
   await finalizeZip(zip,`EXME_PILAR_${P.curto}_${list.length}pecas.zip`);
 }
 async function zipMaster(){
   const zip=new JSZip();
   for(let i=0;i<POSTS.length;i++){
     const p=POSTS[i];
-    await addPostToZip(zip,`${pad(p.pillar===PILLARS[0]?1:PILLARS.indexOf(p.pillar)+1)}_${p.pillar.curto}/${p.serial}_${slug(p.title)}`,p,i+1,POSTS.length);
+    await addPostToZip(zip,`${pad(p.pillar===PILLARS[0]?1:PILLARS.indexOf(p.pillar)+1)}_${p.pillar.curto}/${p.serial}_${slug(p.title)}`,p,i+1,POSTS.length,{mp4Formats:['feed']});
   }
   const matriz=['PILAR;PCT;PECAS;ARQUETIPOS',
     ...PILLARS.map((P,i)=>`${P.nome};${P.pct};${SEEDS[P.id].length};${P.archC.map(a=>'A'+a).join(' · ')}`)].join('\n');
   zip.file('MATRIZ_ESTRATEGICA.csv',blobTxt(matriz));
-  zip.file('LEIA-ME.txt',blobTxt(`EXME® — CASA DO COLECIONADOR MODERNO\nARQUIVO COMPLETO · 90 PEÇAS PARA INSTAGRAM\n\nESTRUTURA\n01_NOSTALGIA · 26 peças\n02_HUMOR · 18 peças\n03_COMUNIDADE · 18 peças (+carrosséis)\n04_RITUAL · 14 peças (+carrosséis)\n05_CULTURA · 9 peças\n06_PHYGITAL · 5 peças\n\nCADA PASTA CONTÉM\nfeed_1080x1350_2x.png · story_1080x1920_2x.png\nfeed.svg · story.svg (nós editáveis, Adobe Illustrator)\nlegenda.txt (copy PT-PT: gancho + narrativa + CTA + hashtags)\nimage_prompt.txt (prompt cinematográfico EN para Midjourney v6 / Flux.1)\n\nexme.club · tu és colecionador`));
+  zip.file('LEIA-ME.txt',blobTxt(`EXME® — CASA DO COLECIONADOR MODERNO\nARQUIVO COMPLETO · 90 PEÇAS PARA INSTAGRAM\n\nESTRUTURA\n01_NOSTALGIA · 26 peças\n02_HUMOR · 18 peças\n03_COMUNIDADE · 18 peças (+carrosséis)\n04_RITUAL · 14 peças (+carrosséis)\n05_CULTURA · 9 peças\n06_PHYGITAL · 5 peças\n\nCADA PASTA CONTÉM\nfeed_1080x1350_2x.png · story_1080x1920_2x.png\nfeed.svg · story.svg (nós editáveis, Adobe Illustrator)\nlegenda.txt (copy PT-PT: gancho + narrativa + CTA + hashtags)\nimage_prompt.txt (prompt cinematográfico EN para Midjourney v6 / Flux.1)\n\nPEÇAS DE CARROSSEL\ncarrossel/ — as 5 lâminas numeradas (capa, citação, dados, chamada, assinatura),\ncada uma em feed e story, PNG 2x e SVG. Publica pela ordem numérica.\n\nPEÇAS ANIMADAS\nanimacao_loop_feed.mp4 — loop perfeito, 25 fps, sem salto ao repetir.\nCarrossel: slideshow das 5 lâminas com fusão circular (10 s).\nHolografia: brilho e foil do cromo (4 s). Terminal: marquise e cursor (4 s).\nO MP4 em story sai no ZIP da peça individual.\n\nexme.club · tu és colecionador`));
   await finalizeZip(zip,'EXME_ARQUIVO_COMPLETO_90_PECAS.zip');
 }
 
