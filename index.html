@@ -1788,51 +1788,57 @@ async function exportMP4(p,fmt){
 /* ════════════════════════════════════════════════════════
    9 · EMPACOTAMENTO ZIP
    ════════════════════════════════════════════════════════ */
+/* Cada peça vai em duas etapas: o que ainda se mexe e o que vai para o cliente */
+const ETAPA_TRAB='1_criação_em_andamento',ETAPA_APROV='2_aprovação_cliente';
+
 async function addPostToZip(zip,folder,p,i,total,opts={}){
   const base=Math.round((i/total)*88);
   toast(base,`A EMPACOTAR ${p.serial} (${i}/${total})`);
   const f=zip.folder(folder);
+  const trab=f.folder(ETAPA_TRAB),aprov=f.folder(ETAPA_APROV);
   const [feedPng,storyPng,feedSvg,storySvg]=await Promise.all([
     rasterPNG(p,'feed'),rasterPNG(p,'story'),buildSVG(p,'feed'),buildSVG(p,'story')]);
-  f.file('feed_1080x1350_2x.png',feedPng);
-  f.file('story_1080x1920_2x.png',storyPng);
-  f.file('feed.svg',feedSvg);
-  f.file('story.svg',storySvg);
-  f.file('legenda.txt',blobTxt(p.legenda));
-  f.file('image_prompt.txt',blobTxt(p.prompt('FEED 4:5')+'\n\n'+p.prompt('STORY 9:16')));
+  /* editável — abre no Illustrator, ainda dá para mexer */
+  trab.file('feed.svg',feedSvg);
+  trab.file('story.svg',storySvg);
+  trab.file('image_prompt.txt',blobTxt(p.prompt('FEED 4:5')+'\n\n'+p.prompt('STORY 9:16')));
+  /* fechado — é isto que vai para aprovação e para publicação */
+  aprov.file('feed_1080x1350_2x.png',feedPng);
+  aprov.file('story_1080x1920_2x.png',storyPng);
+  aprov.file('legenda.txt',blobTxt(p.legenda));
 
   /* carrossel: as 5 lâminas, cada uma em feed e story */
   if(p.carousel){
-    const cf=f.folder('carrossel');
+    const ct=trab.folder('carrossel'),ca=aprov.folder('carrossel');
     for(let s=0;s<SLIDE_COUNT;s++){
       toast(base,`${p.serial} · LÂMINA ${s+1}/${SLIDE_COUNT}`);
       const [sfp,sfs,ssp,sss]=await Promise.all([
         rasterPNG(p,'feed',1,{slide:s}),buildSVG(p,'feed',{slide:s}),
         rasterPNG(p,'story',1,{slide:s}),buildSVG(p,'story',{slide:s})]);
       const nm=`${pad(s+1)}_${SLIDE_NOMES[s]}`;
-      cf.file(`${nm}_feed_1080x1350.png`,sfp);
-      cf.file(`${nm}_feed.svg`,sfs);
-      cf.file(`${nm}_story_1080x1920.png`,ssp);
-      cf.file(`${nm}_story.svg`,sss);
+      ct.file(`${nm}_feed.svg`,sfs);
+      ct.file(`${nm}_story.svg`,sss);
+      ca.file(`${nm}_feed_1080x1350.png`,sfp);
+      ca.file(`${nm}_story_1080x1920.png`,ssp);
     }
-    cf.file('ORDEM.txt',blobTxt(`EXME — CARROSSEL ${p.serial}\n${SLIDE_COUNT} lâminas, por ordem de publicação:\n\n`+
+    ca.file('ORDEM.txt',blobTxt(`EXME — CARROSSEL ${p.serial}\n${SLIDE_COUNT} lâminas, por ordem de publicação:\n\n`+
       SLIDE_NOMES.map((n,s)=>`${pad(s+1)} · ${n.toUpperCase()}`).join('\n')+
       `\n\nPublica na ordem numérica. A legenda do carrossel é a legenda.txt da pasta acima.\n\n`+
       `Os PNG das lâminas saem no tamanho nativo de publicação (1080×1350 feed, 1080×1920 story).\n`+
-      `Para impressão ou edição, usa os SVG — são vetoriais e abrem no Illustrator.`));
+      `Para impressão ou edição, os SVG estão em ${ETAPA_TRAB}/carrossel — são vetoriais e abrem no Illustrator.`));
   }
 
   /* loop animado em MP4 */
   const kind=animKind(p);
   if(kind){
     if(!mp4Ready()){
-      f.file('SEM_MP4.txt',blobTxt('O loop MP4 não foi gerado: este navegador não suporta WebCodecs.\n'+
+      aprov.file('SEM_MP4.txt',blobTxt('O loop MP4 não foi gerado: este navegador não suporta WebCodecs.\n'+
         'Abre o estúdio em Chrome, Edge ou Safari 17+ e volta a exportar o ZIP.'));
     }else{
       for(const fm of (opts.mp4Formats||['feed','story'])){
         try{
           const mp4=await renderLoopMP4(p,fm,pr=>toast(base,`${p.serial} · MP4 ${fm.toUpperCase()} ${Math.round(pr*100)}%`));
-          if(mp4)f.file(`animacao_loop_${fm}.mp4`,mp4);
+          if(mp4)aprov.file(`animacao_loop_${fm}.mp4`,mp4);
         }catch(e){console.error('MP4',p.serial,fm,e)}
       }
     }
@@ -1854,8 +1860,10 @@ async function zipPillar(P){
   const list=POSTS.filter(p=>p.pillar.id===P.id);
   for(let i=0;i<list.length;i++)await addPostToZip(zip,`PILAR_${P.curto}/${list[i].serial}_${slug(list[i].title)}`,list[i],i+1,list.length,{mp4Formats:['feed']});
   zip.file('LEIA-ME.txt',blobTxt(`EXME — PILAR ${P.curto} (${P.nome})\n${list.length} peças · ${P.pct} da matriz\n`+
-    `Cada pasta: feed + story em PNG 2x e SVG editável, legenda.txt e image_prompt.txt\n`+
-    `Peças de carrossel trazem a subpasta carrossel/ com as 5 lâminas numeradas.\n`+
+    `Cada peça divide-se em duas etapas:\n`+
+    `  ${ETAPA_TRAB}/ — SVG editáveis e image_prompt.txt\n`+
+    `  ${ETAPA_APROV}/ — PNG, MP4 e legenda.txt\n`+
+    `Peças de carrossel trazem carrossel/ dentro de cada etapa (5 lâminas numeradas).\n`+
     `Peças animadas trazem animacao_loop_feed.mp4 (loop perfeito).\n`+
     `Para o MP4 em story, exporta o ZIP da peça individual.`));
   await finalizeZip(zip,`EXME_PILAR_${P.curto}_${list.length}pecas.zip`);
@@ -1869,7 +1877,7 @@ async function zipMaster(){
   const matriz=['PILAR;PCT;PECAS;ARQUETIPOS',
     ...PILLARS.map((P,i)=>`${P.nome};${P.pct};${SEEDS[P.id].length};${P.archC.map(a=>'A'+a).join(' · ')}`)].join('\n');
   zip.file('MATRIZ_ESTRATEGICA.csv',blobTxt(matriz));
-  zip.file('LEIA-ME.txt',blobTxt(`EXME® — CASA DO COLECIONADOR MODERNO\nARQUIVO COMPLETO · 90 PEÇAS PARA INSTAGRAM\n\nESTRUTURA\n01_NOSTALGIA · 26 peças\n02_HUMOR · 18 peças\n03_COMUNIDADE · 18 peças (+carrosséis)\n04_RITUAL · 14 peças (+carrosséis)\n05_CULTURA · 9 peças\n06_PHYGITAL · 5 peças\n\nCADA PASTA CONTÉM\nfeed_1080x1350_2x.png · story_1080x1920_2x.png\nfeed.svg · story.svg (nós editáveis, Adobe Illustrator)\nlegenda.txt (copy PT-PT: gancho + narrativa + CTA + hashtags)\nimage_prompt.txt (prompt cinematográfico EN para Midjourney v6 / Flux.1)\n\nPEÇAS DE CARROSSEL\ncarrossel/ — as 5 lâminas numeradas (capa, citação, dados, chamada, assinatura),\ncada uma em feed e story, PNG 2x e SVG. Publica pela ordem numérica.\n\nPEÇAS ANIMADAS (68 das 90)\nanimacao_loop_feed.mp4 — loop perfeito, 25 fps, sem salto ao repetir.\nCarrossel · slideshow das 5 lâminas com fusão circular (10 s)\nVault Foil · foil holográfico e brilho a atravessar o cromo (4 s)\nScrapbook · fuga de luz a percorrer a folha do álbum (4 s)\nRetro Web · marquise do terminal e cursor a piscar (4 s)\nRelíquia · barra de leitura de arquivo a varrer a fotografia (4 s)\nTipo Explosiva · as palavras gigantes derivam em sentidos opostos (4 s)\nO MP4 em story sai no ZIP da peça individual.\n\nexme.club · tu és colecionador`));
+  zip.file('LEIA-ME.txt',blobTxt(`EXME® — CASA DO COLECIONADOR MODERNO\nARQUIVO COMPLETO · 90 PEÇAS PARA INSTAGRAM\n\nESTRUTURA\n01_NOSTALGIA · 26 peças\n02_HUMOR · 18 peças\n03_COMUNIDADE · 18 peças (+carrosséis)\n04_RITUAL · 14 peças (+carrosséis)\n05_CULTURA · 9 peças\n06_PHYGITAL · 5 peças\n\nCADA PEÇA, EM DUAS ETAPAS\n${ETAPA_TRAB}/\n  feed.svg · story.svg (nós editáveis, Adobe Illustrator)\n  image_prompt.txt (prompt cinematográfico EN para Midjourney v6 / Flux.1)\n${ETAPA_APROV}/\n  feed_1080x1350_2x.png · story_1080x1920_2x.png\n  legenda.txt (copy PT-PT: gancho + narrativa + CTA + hashtags)\n  animacao_loop_feed.mp4 (nas peças animadas)\n\nPEÇAS DE CARROSSEL\nCada etapa tem a sua subpasta carrossel/ com as 5 lâminas numeradas\n(capa, citação, dados, chamada, assinatura): os SVG na etapa 1, os PNG\nem tamanho nativo na etapa 2. Publica pela ordem numérica.\n\nPEÇAS ANIMADAS (68 das 90)\nanimacao_loop_feed.mp4 — loop perfeito, 25 fps, sem salto ao repetir.\nCarrossel · slideshow das 5 lâminas com fusão circular (10 s)\nVault Foil · foil holográfico e brilho a atravessar o cromo (4 s)\nScrapbook · fuga de luz a percorrer a folha do álbum (4 s)\nRetro Web · marquise do terminal e cursor a piscar (4 s)\nRelíquia · barra de leitura de arquivo a varrer a fotografia (4 s)\nTipo Explosiva · as palavras gigantes derivam em sentidos opostos (4 s)\nO MP4 em story sai no ZIP da peça individual.\n\nexme.club · tu és colecionador`));
   await finalizeZip(zip,'EXME_ARQUIVO_COMPLETO_90_PECAS.zip');
 }
 
