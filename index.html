@@ -321,9 +321,29 @@ pre{font-family:'Space Mono';font-size:11.5px;line-height:1.75;white-space:pre-w
 .a7{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:120px 80px;overflow:hidden}
 .a7-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(16,232,104,.15),transparent 50%),radial-gradient(ellipse at 70% 80%,rgba(245,158,11,.15),transparent 50%);z-index:0}
 .a7-word{position:absolute;font-family:'Unbounded';font-weight:900;text-transform:uppercase;opacity:.12;color:var(--acc);z-index:1}
-.a7-w1{font-size:280px;top:-40px;left:-60px;transform:rotate(-12deg)}
-.a7-w2{font-size:220px;bottom:80px;right:-40px;transform:rotate(8deg)}
-.a7-w3{font-size:180px;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-5deg)}
+.a7-w1{font-size:280px;top:-40px;left:-60px;transform:rotate(-12deg);animation:driftA 4s ease-in-out infinite}
+.a7-w2{font-size:220px;bottom:80px;right:-40px;transform:rotate(8deg);animation:driftB 4s ease-in-out infinite}
+.a7-w3{font-size:180px;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-5deg);animation:driftC 4s ease-in-out infinite}
+/* deriva das palavras gigantes — mesma amplitude e duração do MP4 exportado */
+@keyframes driftA{0%,100%{transform:translateX(0) rotate(-12deg)}25%{transform:translateX(68px) rotate(-12deg)}75%{transform:translateX(-68px) rotate(-12deg)}}
+@keyframes driftB{0%,100%{transform:translateX(0) rotate(8deg)}25%{transform:translateX(-68px) rotate(8deg)}75%{transform:translateX(68px) rotate(8deg)}}
+@keyframes driftC{0%,100%{transform:translate(-50%,-50%) rotate(-5deg)}25%{transform:translate(calc(-50% + 34px),-50%) rotate(-5deg)}75%{transform:translate(calc(-50% - 34px),-50%) rotate(-5deg)}}
+
+/* A5 · barra de leitura de arquivo a varrer a fotografia (altura relativa,
+   por isso serve feed e story sem keyframes separados) */
+.a5-scan{position:absolute;left:0;right:0;top:0;height:42%;pointer-events:none;z-index:2;
+  mix-blend-mode:screen;animation:scanA5 4s linear infinite;
+  background:linear-gradient(rgba(245,158,11,0),rgba(245,158,11,.22) 50%,rgba(245,158,11,0))}
+.a5-scan::after{content:'';position:absolute;left:0;right:0;top:50%;height:2px;background:rgba(248,250,252,.45)}
+@keyframes scanA5{from{transform:translateY(-100%)}to{transform:translateY(238%)}}
+
+/* A2 · fuga de luz em órbita pela folha do álbum */
+.a2-luz{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:9}
+.a2-luz::before{content:'';position:absolute;inset:0;mix-blend-mode:screen;
+  background:radial-gradient(circle at 50% 50%,rgba(245,158,11,.16),rgba(245,158,11,.06) 45%,transparent 66%);
+  animation:luzA2 4s linear infinite}
+@keyframes luzA2{0%{transform:translate(42%,0)}25%{transform:translate(0,34%)}
+  50%{transform:translate(-42%,0)}75%{transform:translate(0,-34%)}100%{transform:translate(42%,0)}}
 .a7-content{position:relative;z-index:2;text-align:center;display:flex;flex-direction:column;gap:40px;align-items:center}
 .a7-kicker{font-family:'Space Mono';font-size:22px;letter-spacing:.4em;color:var(--acc);text-transform:uppercase}
 .a7-title{font-family:'Unbounded';font-weight:900;font-size:120px;line-height:.88;text-transform:uppercase;max-width:900px;text-shadow:0 8px 0 rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.3)}
@@ -472,6 +492,7 @@ pre{font-family:'Space Mono';font-size:11.5px;line-height:1.75;white-space:pre-w
         <button class="btn btn-grass" id="mPng"><i data-lucide="image-down"></i> PNG 2X</button>
         <button class="btn btn-paper" id="mSvg"><i data-lucide="file-code-2"></i> SVG EDITÁVEL</button>
         <button class="btn btn-gold" id="mZip"><i data-lucide="folder-archive"></i> ZIP DA PEÇA</button>
+        <button class="btn btn-paper" id="mMp4" hidden><i data-lucide="film"></i> LOOP MP4</button>
         <button class="btn btn-paper" id="mImg"><i data-lucide="image-plus"></i> TROCAR CROMO</button>
       </div>
       <div class="m-nav mono"><button id="mPrev">← ANTERIOR</button><span id="mPos"></span><button id="mNext">SEGUINTE →</button></div>
@@ -827,7 +848,7 @@ function a2HTML(p){return `<div class="a2"><div class="a2-paper"></div>
  <div class="a2-note">“${esc(p.hook)}”</div>
  <h2 class="a2-title">${esc(p.title)}</h2>
  <div class="a2-circ"><span>ARQUIVO<br>★<br>EXME</span></div>
- <div class="a2-foot">nota de rodapé — ${p.nota}</div></div>`}
+ <div class="a2-foot">nota de rodapé — ${p.nota}</div><i class="a2-luz"></i></div>`}
 
 function a3HTML(p){const marq=`+++ TROCAS ABERTAS +++ ${esc(p.title.toUpperCase())} +++ RESPONDE COM O TEU REPETIDO +++ `;
  return `<div class="a3"><div class="a3-win">
@@ -852,7 +873,7 @@ function a4HTML(p){return `<img class="a4-bg" src="${imgSrc(p)}" alt="" loading=
  <div class="a4-side">MANIFESTO · PEÇA ${p.n}/${POSTS.length}</div>`}
 
 function a5HTML(p){return `<div class="a5"><div class="a5-top"><img class="a5-img" src="${imgSrc(p)}" alt="" loading="lazy">
- <div class="a5-wear"></div><div class="a5-tear"></div></div>
+ <div class="a5-wear"></div><i class="a5-scan"></i><div class="a5-tear"></div></div>
  <div class="a5-bot">
    <div class="a5-cat">RELÍQUIA Nº ${p.cromo} — CATALOGADA EM ${p.ano}</div>
    <h2 class="a5-title">${esc(p.title)}</h2>
@@ -988,6 +1009,7 @@ function cardHTML(p,idx){return `<article class="card" data-n="${p.n}" style="--
    <button data-act="png" title="Exportar PNG 2x no formato atual"><i data-lucide="image-down"></i><span>PNG</span></button>
    <button data-act="svg" title="Exportar SVG com nós editáveis"><i data-lucide="file-code-2"></i><span>SVG</span></button>
    <button data-act="zip" title="ZIP da peça: feed+story, PNG, SVG, legenda e prompt"><i data-lucide="folder-archive"></i><span>ZIP</span></button>
+   ${animKind(p)?'<button data-act="mp4" title="Loop MP4 da animação, no formato atual"><i data-lucide="film"></i><span>MP4</span></button>':''}
    <button data-act="img" title="Substituir a imagem da peça"><i data-lucide="image-plus"></i><span>IMG</span></button>
    <button data-act="open" title="Abrir ficha da peça"><i data-lucide="expand"></i><span>FICHA</span></button>
   </div></div></article>`}
@@ -1036,6 +1058,7 @@ function onGridClick(e){
   if(act==='png')exportPNG(p,state.fmt);
   else if(act==='svg')exportSVG(p,state.fmt);
   else if(act==='zip')zipPost(p);
+  else if(act==='mp4')exportMP4(p,state.fmt);
   else if(act==='img'){pendingSwap=p.n;$('#fileIn').click()}
   else if(act==='open')openModal(p);
 }
@@ -1092,6 +1115,7 @@ function openModal(p,tear=false){
   if(p.carousel){$('#mStage').dataset.slides='5';$('#mStage').dataset.current='0'}
   const list=filtered(),pos=list.findIndex(x=>x.n===p.n);
   $('#mPos').textContent=`${pad(Math.max(pos,0)+1)} / ${pad(list.length)}`;
+  $('#mMp4').hidden=!animKind(p);
   $('#modal').classList.add('open');document.body.style.overflow='hidden';
   const t=$('#mTear');t.classList.remove('tearing');
   sizeModal();
@@ -1122,6 +1146,7 @@ $$('.tabs button').forEach(b=>b.addEventListener('click',()=>{
 $('#mPng').addEventListener('click',()=>modalPost&&exportPNG(modalPost,state.fmt));
 $('#mSvg').addEventListener('click',()=>modalPost&&exportSVG(modalPost,state.fmt));
 $('#mZip').addEventListener('click',()=>modalPost&&zipPost(modalPost));
+$('#mMp4').addEventListener('click',()=>modalPost&&exportMP4(modalPost,state.fmt));
 $('#mImg').addEventListener('click',()=>{if(modalPost){pendingSwap=modalPost.n;$('#fileIn').click()}});
 
 /* rasgar saqueta — peça aleatória */
@@ -1746,6 +1771,18 @@ async function exportSVG(p,fmt){
     saveAs(new Blob([s],{type:'image/svg+xml;charset=utf-8'}),`${p.serial}_${slug(p.title)}_${fmt}.svg`);
     toast(100,'SVG EDITÁVEL EXPORTADO ✓');setTimeout(hideToast,1800);
   }catch(e){toast(100,'ERRO NA EXPORTAÇÃO');setTimeout(hideToast,2500)}
+}
+
+async function exportMP4(p,fmt){
+  if(!animKind(p)){toast(100,'ESTA PEÇA NÃO TEM ANIMAÇÃO');setTimeout(hideToast,2200);return}
+  if(!mp4Ready()){toast(100,'MP4 REQUER CHROME, EDGE OU SAFARI 17+');setTimeout(hideToast,3000);return}
+  try{
+    toast(4,`A ANIMAR ${p.serial} · MP4 ${fmt.toUpperCase()}`);
+    const b=await renderLoopMP4(p,fmt,pr=>toast(Math.max(4,Math.round(pr*96)),`A ANIMAR ${p.serial} · ${Math.round(pr*100)}%`));
+    if(!b)throw new Error('sem codec');
+    saveAs(b,`${p.serial}_${slug(p.title)}_${fmt}_loop.mp4`);
+    toast(100,'LOOP MP4 EXPORTADO ✓');setTimeout(hideToast,1800);
+  }catch(e){console.error('MP4',e);toast(100,'ERRO NA ANIMAÇÃO');setTimeout(hideToast,2500)}
 }
 
 /* ════════════════════════════════════════════════════════
