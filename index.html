@@ -1067,7 +1067,7 @@ $('#fileIn').addEventListener('change',e=>{const f=e.target.files[0];if(f&&pendi
 function swapImage(n,file){
   const p=POSTS.find(x=>x.n===n);if(!p)return;
   const rd=new FileReader();
-  rd.onload=()=>{p.custom=rd.result;
+  rd.onload=()=>{p.custom=rd.result;p.customJpg=null;   /* invalida a conversão anterior */
     const card=grid.querySelector(`.card[data-n="${n}"]`);
     if(card){const sc=card.querySelector('.pvscale');sc.innerHTML=postHTML(p,state.fmt);layoutScale()}
     if(modalPost===p){$('#mStage').innerHTML=p.carousel?slideHTML(p,0):postHTML(p,state.fmt);
@@ -1172,14 +1172,30 @@ function fallbackArt(p){
   x.fillText('ARQUIVO EXME · FOTOGRAFIA POR SUBSTITUIR',540,760);
   return c.toDataURL('image/png');
 }
+/* O Illustrator não decodifica WebP embutido em SVG: vê um <image> ilegível,
+   trata-o como ligação partida e pede para relinkar. Reconverter para JPEG
+   resolve — a fotografia continua DENTRO do ficheiro, e ao mesmo peso. */
+const IMG_COMPAT=/^data:image\/(jpeg|png)[;,]/;
+async function paraJPEG(dataUrl,q=.92){
+  const img=new Image();
+  await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=dataUrl});
+  const c=document.createElement('canvas');
+  c.width=img.naturalWidth;c.height=img.naturalHeight;
+  const x=c.getContext('2d');
+  x.fillStyle='#161A22';x.fillRect(0,0,c.width,c.height);   /* JPEG não tem alfa */
+  x.drawImage(img,0,0);
+  return c.toDataURL('image/jpeg',q);
+}
 async function ensureImgData(p){
-  const src=p.custom||IMG_MAP[p.n]||p.img;
-  if(p.custom)return p.custom;
+  if(p.custom)return IMG_COMPAT.test(p.custom)
+    ? p.custom : (p.customJpg||(p.customJpg=await paraJPEG(p.custom)));
+  const src=IMG_MAP[p.n]||p.img;
   if(imgCache.has(src))return imgCache.get(src);
   try{
     const r=await fetch(src,{mode:'cors'});if(!r.ok)throw 0;
     const b=await r.blob();
-    const d=await new Promise(res=>{const f=new FileReader();f.onload=()=>res(f.result);f.readAsDataURL(b)});
+    let d=await new Promise(res=>{const f=new FileReader();f.onload=()=>res(f.result);f.readAsDataURL(b)});
+    if(!IMG_COMPAT.test(d))d=await paraJPEG(d);
     imgCache.set(src,d);return d;
   }catch(e){const d=fallbackArt(p);imgCache.set(src,d);return d}
 }
